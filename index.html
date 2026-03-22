@@ -262,7 +262,7 @@ body.draw-active #chint{display:none !important;}
 .pb{height:100%;background:var(--ac);border-radius:3px;transition:width .25s;}
 
 /* ── ZOOM ── */
-#zbar{position:fixed;bottom:18px;right:18px;background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:4px 8px;display:none;align-items:center;gap:5px;z-index:60;}
+#zbar{position:absolute;bottom:18px;left:18px;background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:4px 8px;display:none;align-items:center;gap:5px;z-index:60;}
 #zbar.on{display:flex;}
 #zbar button{background:none;border:none;color:var(--t2);cursor:pointer;font-size:16px;padding:0 3px;}
 #zbar button:hover{color:var(--ac);}
@@ -420,14 +420,13 @@ body.draw-active #chint{display:none !important;}
         <div id="memo-col"></div>
       </div>
     </div>
+    <div id="zbar">
+      <button onclick="zBy(-10)">−</button>
+      <span id="zval">100%</span>
+      <button onclick="zBy(10)">＋</button>
+      <button onclick="zReset()" style="font-size:11px;color:var(--t3)">↺</button>
+    </div>
   </div>
-</div>
-
-<div id="zbar">
-  <button onclick="zBy(-10)">−</button>
-  <span id="zval">100%</span>
-  <button onclick="zBy(10)">＋</button>
-  <button onclick="zReset()" style="font-size:11px;color:var(--t3)">↺</button>
 </div>
 <div id="chint">클릭하여 메모 추가</div>
 

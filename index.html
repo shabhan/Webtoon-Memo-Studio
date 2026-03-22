@@ -398,7 +398,7 @@ body.draw-active #chint{display:none !important;}
       <button class="btn" style="justify-content:center" title="JSON 백업 파일을 불러옵니다" onclick="loadProject()">📁 백업 불러오기</button>
       <div style="margin-top:6px;padding:7px 8px;background:rgba(240,192,64,.07);border-radius:6px;border:1px solid rgba(240,192,64,.15);text-align:center;line-height:1.8;">
         <div style="font-size:10px;color:var(--ac);font-weight:600;">● 자동저장 활성화</div>
-        <div style="font-size:10px;color:var(--t3);">새로고침해도 기록이 유지됩니다</div>
+        <div style="font-size:10px;color:var(--t3);">주기적인 백업을 권장합니다</div>
       </div>
       <div style="margin-top:4px;padding-top:8px;border-top:1px solid var(--bd);text-align:center;line-height:1.7;">
         <div style="font-size:10px;color:var(--t3);">Made by <span style="color:var(--t2);font-weight:600;">샤반</span></div>
@@ -536,10 +536,10 @@ body.draw-active #chint{display:none !important;}
       <!-- 예시 버튼 -->
       <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;">
         <span style="font-size:10px;color:var(--t3);align-self:center;">예시:</span>
-        <button class="btn" style="font-size:10px;padding:3px 8px;font-family:monospace" onclick="setBulkPattern('{회차}화_{페이지}.jpg')" title="예: 1화_001.jpg">N화_001.jpg</button>
-        <button class="btn" style="font-size:10px;padding:3px 8px;font-family:monospace" onclick="setBulkPattern('작품명_{회차}화_{페이지}.jpg')" title="예: 작품명_1화_001.jpg">작품명_N화_001.jpg</button>
-        <button class="btn" style="font-size:10px;padding:3px 8px;font-family:monospace" onclick="setBulkPattern('작품명_{회차}화_최종원고_{페이지}.jpg')" title="예: 작품명_2화_최종원고_001.jpg">작품명_N화_최종원고_001.jpg</button>
-        <button class="btn" style="font-size:10px;padding:3px 8px;font-family:monospace" onclick="setBulkPattern('작품명{회차}화{페이지}.jpg')" title="예: 작품명004화01.jpg">작품명NNN화NN.jpg</button>
+        <button class="btn" style="font-size:10px;padding:3px 8px;font-family:monospace" onclick="setBulkPattern('{회차}화_{페이지}.jpg')" title="예: 1화_001.jpg">n화_001.jpg</button>
+        <button class="btn" style="font-size:10px;padding:3px 8px;font-family:monospace" onclick="setBulkPattern('작품명_{회차}화_{페이지}.jpg')" title="예: 작품명_1화_001.jpg">작품명_n화_001.jpg</button>
+        <button class="btn" style="font-size:10px;padding:3px 8px;font-family:monospace" onclick="setBulkPattern('작품명_{회차}화_최종원고_{페이지}.jpg')" title="예: 작품명_2화_최종원고_001.jpg">작품명_n화_최종원고_001.jpg</button>
+        <button class="btn" style="font-size:10px;padding:3px 8px;font-family:monospace" onclick="setBulkPattern('작품명{회차}화{페이지}.jpg')" title="예: 작품명004화01.jpg">작품명nnn화nn.jpg</button>
         <button class="btn" style="font-size:10px;padding:3px 8px;font-family:monospace" onclick="setBulkPattern('ep{회차}_{페이지}.jpg')" title="예: ep01_001.jpg">epNN_001.jpg</button>
       </div>
       <!-- 패턴 미리보기 -->
@@ -685,7 +685,7 @@ body.draw-active #chint{display:none !important;}
   <div class="pw"><div class="pb" id="expb" style="width:0%"></div></div>
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ══════════════════════════════════════════════════════════
 // INDEXED DB AUTO-SAVE
 // ══════════════════════════════════════════════════════════
@@ -1305,14 +1305,20 @@ function buildCanvas(ep) {
 
     wrap.addEventListener('mousemove',e=>{
       if(DS.mode){ guide.style.opacity='0'; return; }
-      guide.style.top=(e.clientY-wrap.getBoundingClientRect().top)+'px';
+      const zoomScale = S.zoom / 100;
+      guide.style.top = ((e.clientY - wrap.getBoundingClientRect().top) / zoomScale) + 'px';
+    });
+    wrap.addEventListener('mouseleave',()=>{
+      guide.style.top = '-9999px';
     });
     wrap.addEventListener('click',e=>{
       if(DS.mode) return;  // 드로잉 모드에서 클릭 이벤트 차단
       const r=wrap.getBoundingClientRect();
-      const ry=Math.max(0,Math.min(1,(e.clientY-r.top)/r.height));
+      const zoomScale = S.zoom / 100;
+      const relY = (e.clientY - r.top) / zoomScale;
+      const ry=Math.max(0,Math.min(1, relY / (r.height / zoomScale)));
       openTypePop(e.clientX,e.clientY,ry,idx);
-      const p=document.createElement('div');p.className='cpulse';p.style.top=(e.clientY-r.top)+'px';
+      const p=document.createElement('div');p.className='cpulse';p.style.top=relY+'px';
       wrap.appendChild(p);p.addEventListener('animationend',()=>p.remove());
     });
     imgCol.appendChild(wrap);

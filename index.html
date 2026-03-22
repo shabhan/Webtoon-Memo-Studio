@@ -2676,10 +2676,42 @@ function attachDrawEvents(cv, pageIdx){
     const list = DS.strokes[pageIdx];
     if(!list||!list.length) return false;
     const THRESH = Math.max(DS.size * 2, 10);
+
+    // 획의 샘플 포인트 생성 (펜: 저장된 points 그대로, 도형: 경계 샘플링)
+    function getSamplePoints(s){
+      if(s.tool==='pen') return s.points;
+      const p0=s.points[0], p1=s.points[s.points.length-1];
+      const pts=[];
+      const STEPS=40; // 샘플 수
+      if(s.tool==='line'||s.tool==='arrow'){
+        for(let t=0;t<=STEPS;t++){
+          pts.push({x:p0.x+(p1.x-p0.x)*t/STEPS, y:p0.y+(p1.y-p0.y)*t/STEPS});
+        }
+      } else if(s.tool==='rect'){
+        const x0=Math.min(p0.x,p1.x), y0=Math.min(p0.y,p1.y);
+        const x1=Math.max(p0.x,p1.x), y1=Math.max(p0.y,p1.y);
+        for(let t=0;t<=STEPS;t++){
+          const r=t/STEPS;
+          pts.push({x:x0+(x1-x0)*r, y:y0}); // 위
+          pts.push({x:x0+(x1-x0)*r, y:y1}); // 아래
+          pts.push({x:x0, y:y0+(y1-y0)*r}); // 왼
+          pts.push({x:x1, y:y0+(y1-y0)*r}); // 오른
+        }
+      } else if(s.tool==='circle'){
+        const rx=Math.abs(p1.x-p0.x)/2, ry=Math.abs(p1.y-p0.y)/2;
+        const cx=Math.min(p0.x,p1.x)+rx, cy=Math.min(p0.y,p1.y)+ry;
+        for(let t=0;t<=STEPS;t++){
+          const angle=(t/STEPS)*Math.PI*2;
+          pts.push({x:cx+rx*Math.cos(angle), y:cy+ry*Math.sin(angle)});
+        }
+      }
+      return pts;
+    }
+
     // 뒤에서부터 탐색 (위에 그려진 획 우선)
     for(let i=list.length-1; i>=0; i--){
       const s = list[i];
-      for(const pt of s.points){
+      for(const pt of getSamplePoints(s)){
         const dx=pt.x-p.x, dy=pt.y-p.y;
         if(Math.sqrt(dx*dx+dy*dy) < THRESH){
           pushUndo(cv, pageIdx);

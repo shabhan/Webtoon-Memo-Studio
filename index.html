@@ -685,7 +685,7 @@ body.draw-active #chint{display:none !important;}
   <div class="pw"><div class="pb" id="expb" style="width:0%"></div></div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ══════════════════════════════════════════════════════════
 // INDEXED DB AUTO-SAVE
 // ══════════════════════════════════════════════════════════
@@ -735,26 +735,25 @@ function scheduleAutoSave() {
   _saveTimer = setTimeout(() => autoSave(), 500);
 }
 
-async function autoSave() {
-  // 현재 열린 회차의 드로잉 캔버스 동기화
+// ── 공통: 현재 회차의 DOM 상태를 데이터 모델에 동기화 ──
+function syncCurrentEpState() {
   const ep = typeof curEp === 'function' ? curEp() : null;
-  if (ep) {
-    document.querySelectorAll('.draw-canvas').forEach(cv => {
-      const idx = parseInt(cv.closest('.img-wrap')?.dataset?.idx ?? -1);
-      if (idx >= 0) {
-        if (!ep.drawings) ep.drawings = {};
-        ep.drawings[idx] = cv.toDataURL('image/png');
-      }
-    });
-    // 열린 메모 에디터 내용 동기화
-    document.querySelectorAll('.mcard').forEach(card => {
-      const mid    = card.dataset.mid;
-      const memo   = (ep.memos || []).find(m => m.id === mid);
-      const editor = card.querySelector('.meditor');
-      if (memo && editor) memo.html = editor.innerHTML;
-    });
-  }
+  if (!ep) return;
+  if (!ep.drawings) ep.drawings = {};
+  document.querySelectorAll('.draw-canvas').forEach(cv => {
+    const idx = parseInt(cv.closest('.img-wrap')?.dataset?.idx ?? -1);
+    if (idx >= 0) ep.drawings[idx] = cv.toDataURL('image/png');
+  });
+  const memoMap = new Map((ep.memos || []).map(m => [m.id, m]));
+  document.querySelectorAll('.mcard').forEach(card => {
+    const memo = memoMap.get(card.dataset.mid);
+    const editor = card.querySelector('.meditor');
+    if (memo && editor) memo.html = editor.innerHTML;
+  });
+}
 
+async function autoSave() {
+  syncCurrentEpState();
   const data = {
     v: 5,
     curProjId: S.curProjId,
@@ -804,7 +803,7 @@ async function loadAutoSave() {
 // 저장 표시기 (우측 하단 짧게 표시)
 let _indTimer = null;
 function showSaveIndicator() {
-  let ind = document.getElementById('save-indicator');
+  const ind = document.getElementById('save-indicator');
   if (!ind) return;
   ind.classList.add('show');
   clearTimeout(_indTimer);
@@ -818,29 +817,24 @@ function showConfirm(msg, onOk) {
   document.getElementById('confirm-msg').textContent = msg;
   overlay.classList.add('on');
 
-  function cleanup() {
-    overlay.classList.remove('on');
-  }
-
-  function handleOk() {
-    cleanup();
-    document.getElementById('confirm-ok').removeEventListener('click', handleOk);
-    document.getElementById('confirm-cancel').removeEventListener('click', handleCancel);
-    onOk();
-  }
-  function handleCancel() {
-    cleanup();
-    document.getElementById('confirm-ok').removeEventListener('click', handleOk);
-    document.getElementById('confirm-cancel').removeEventListener('click', handleCancel);
-  }
-
-  // 기존 리스너 제거 후 새로 등록
-  const okBtn = document.getElementById('confirm-ok');
-  const cancelBtn = document.getElementById('confirm-cancel');
+  // 기존 리스너 제거를 위해 노드 교체 후 새 참조 획득
+  let okBtn = document.getElementById('confirm-ok');
+  let cancelBtn = document.getElementById('confirm-cancel');
   okBtn.replaceWith(okBtn.cloneNode(true));
   cancelBtn.replaceWith(cancelBtn.cloneNode(true));
-  document.getElementById('confirm-ok').addEventListener('click', handleOk);
-  document.getElementById('confirm-cancel').addEventListener('click', handleCancel);
+  okBtn = document.getElementById('confirm-ok');
+  cancelBtn = document.getElementById('confirm-cancel');
+
+  function cleanup() {
+    overlay.classList.remove('on');
+    okBtn.removeEventListener('click', handleOk);
+    cancelBtn.removeEventListener('click', handleCancel);
+  }
+  function handleOk()     { cleanup(); onOk(); }
+  function handleCancel() { cleanup(); }
+
+  okBtn.addEventListener('click', handleOk);
+  cancelBtn.addEventListener('click', handleCancel);
 }
 
 // S.projs = [{id, title, open:bool, eps:[{id,num,title,pages,memos}]}]
@@ -865,6 +859,25 @@ const curEp = () => {
   return p ? (p.eps.find(e => e.id === S.curEpId) || null) : null;
 };
 const allEps = () => S.projs.flatMap(p => p.eps);
+
+// 자주 참조되는 DOM 요소 캐시 (DOMContentLoaded 이후 사용)
+const $ = id => document.getElementById(id);
+// 레이아웃 전환에 쓰이는 요소들을 한 번만 캐싱
+let _el = null;
+function el() {
+  if (!_el) _el = {
+    viewer:     $('viewer'),
+    emptyState: $('empty-state'),
+    btnExport:  $('btn-export'),
+    splitCtrl:  $('split-ctrl'),
+    zbar:       $('zbar'),
+    epLabel:    $('ep-label'),
+    btnDrawTog: $('btn-draw-toggle'),
+    imgCol:     $('img-col'),
+    memoCol:    $('memo-col'),
+  };
+  return _el;
+}
 
 // ══════════════════════════════════════════════════════════
 // SIDEBAR / TREE  — pure DOM build (no innerHTML on container)
@@ -1027,13 +1040,13 @@ function selEp(projId, epId) {
   S.curEpId   = epId;
   const ep = curEp();
   updateTopLabel();
-  document.getElementById('btn-export').style.display = '';
-  document.getElementById('split-ctrl').style.display = 'flex';
-  document.getElementById('empty-state').style.display = 'none';
-  document.getElementById('viewer').style.display = 'block';
-  document.getElementById('zbar').classList.add('on');
-  // 드로잉 툴 표시 & 상태 초기화
-  document.getElementById('btn-draw-toggle').classList.add('visible');
+  const E = el();
+  E.btnExport.style.display  = '';
+  E.splitCtrl.style.display  = 'flex';
+  E.emptyState.style.display = 'none';
+  E.viewer.style.display     = 'block';
+  E.zbar.classList.add('on');
+  E.btnDrawTog.classList.add('visible');
   DS.stacks={}; DS.redos={}; DS.strokes={}; DS.curPageIdx=-1; DS.drawing=false; DS.curStroke=null;
   renderTree();
   buildCanvas(ep);
@@ -1041,10 +1054,10 @@ function selEp(projId, epId) {
 
 function updateTopLabel() {
   const ep = curEp();
-  if (!ep) { document.getElementById('ep-label').textContent='회차를 선택하세요'; return; }
+  const E = el();
+  if (!ep) { E.epLabel.textContent='회차를 선택하세요'; return; }
   const p = S.projs.find(p=>p.id===S.curProjId);
-  document.getElementById('ep-label').textContent =
-    (p?p.title+' ':'') + ep.num+'화' + (ep.title?' · '+ep.title:'');
+  E.epLabel.textContent = (p?p.title+' ':'') + ep.num+'화' + (ep.title?' · '+ep.title:'');
 }
 
 function openNewEpFor(projId) {
@@ -1206,12 +1219,13 @@ function deleteEp(projId, epId) {
 }
 
 function clearCanvas() {
-  document.getElementById('viewer').style.display='none';
-  document.getElementById('empty-state').style.display='flex';
-  document.getElementById('btn-export').style.display='none';
-  document.getElementById('split-ctrl').style.display='none';
-  document.getElementById('zbar').classList.remove('on');
-  document.getElementById('ep-label').textContent='회차를 선택하세요';
+  const E = el();
+  E.viewer.style.display     = 'none';
+  E.emptyState.style.display = 'flex';
+  E.btnExport.style.display  = 'none';
+  E.splitCtrl.style.display  = 'none';
+  E.zbar.classList.remove('on');
+  E.epLabel.textContent = '회차를 선택하세요';
 }
 
 function changeSplit(delta) {
@@ -1253,8 +1267,9 @@ document.addEventListener('click', e => {
 // BUILD CANVAS
 // ══════════════════════════════════════════════════════════
 function buildCanvas(ep) {
-  const imgCol  = document.getElementById('img-col');
-  const memoCol = document.getElementById('memo-col');
+  const E = el();
+  const imgCol  = E.imgCol;
+  const memoCol = E.memoCol;
   imgCol.innerHTML  = '';
   memoCol.innerHTML = '';
   imgCol.style.zoom = S.zoom/100;
@@ -1324,49 +1339,61 @@ function buildCanvas(ep) {
     imgCol.appendChild(wrap);
   });
 
-  const imgs=imgCol.querySelectorAll('img');
-  let done=0;
-  const onLoad=()=>{if(++done===imgs.length){ renderAllCards(ep); }};
-  imgs.forEach(img=>img.complete?onLoad():(img.onload=img.onerror=onLoad));
-  setTimeout(()=>renderAllCards(ep), 500);
-  setTimeout(()=>placeAll(ep), 1500);
-  // 드로잉 오버레이 캔버스 추가 (이미지 로드 후)
-  setTimeout(()=>{
-    imgCol.querySelectorAll('.img-wrap').forEach(wrap=>{
-      const idx=parseInt(wrap.dataset.idx);
-      addDrawCanvas(wrap, idx);
-    });
-  }, 200);
+  // 드로잉 캔버스는 바로 추가 (이미지 레이아웃과 무관)
+  imgCol.querySelectorAll('.img-wrap').forEach(wrap => {
+    addDrawCanvas(wrap, parseInt(wrap.dataset.idx));
+  });
+
+  // 이미지 로드 완료 시 카드 배치 (lazy load 대응)
+  const imgs = imgCol.querySelectorAll('img');
+  let loadDone = 0;
+  const total = imgs.length;
+  const onImgLoad = () => {
+    if (++loadDone === total) {
+      renderAllCards(ep);
+    }
+  };
+  if (total === 0) {
+    renderAllCards(ep);
+  } else {
+    imgs.forEach(img => img.complete ? onImgLoad() : (img.onload = img.onerror = onImgLoad));
+  }
+  // 폴백: lazy 이미지가 뷰포트 밖이면 onload가 늦을 수 있으므로 안전망 유지
+  setTimeout(() => renderAllCards(ep), 600);
 }
 
 // ══════════════════════════════════════════════════════════
 // CARD POSITIONING  (ratioY × visual wrap height via getBoundingClientRect)
 // ══════════════════════════════════════════════════════════
 function cardTop(memo) {
-  const imgCol  = document.getElementById('img-col');
-  const memoCol = document.getElementById('memo-col');
-  const wraps   = imgCol.querySelectorAll('.img-wrap');
-  const wrap    = wraps[memo.pageIdx];
-  if(!wrap) return 0;
+  const imgCol = el().imgCol;
+  const wraps  = imgCol.querySelectorAll('.img-wrap');
+  const wrap   = wraps[memo.pageIdx];
+  if (!wrap) return 0;
   const icr = imgCol.getBoundingClientRect();
   const wr  = wrap.getBoundingClientRect();
-  // visual offset of wrap top from imgCol top
-  const wTop = wr.top - icr.top;
-  return wTop + memo.ratioY * wr.height;
+  return (wr.top - icr.top) + memo.ratioY * wr.height;
 }
 
 function placeAll(ep) {
-  const imgCol  = document.getElementById('img-col');
-  const memoCol = document.getElementById('memo-col');
-  memoCol.style.minHeight = imgCol.getBoundingClientRect().height + 'px';
-  memoCol.querySelectorAll('.mcard').forEach(card=>{
-    const memo=(ep.memos||[]).find(m=>m.id===card.dataset.mid);
-    if(memo) card.style.top = cardTop(memo)+'px';
+  const E      = el();
+  const imgCol  = E.imgCol;
+  const memoCol = E.memoCol;
+  const icr     = imgCol.getBoundingClientRect();
+  const wrapRects = Array.from(imgCol.querySelectorAll('.img-wrap'))
+    .map(w => w.getBoundingClientRect());
+  memoCol.style.minHeight = icr.height + 'px';
+  const memoMap = new Map((ep.memos || []).map(m => [m.id, m]));
+  memoCol.querySelectorAll('.mcard').forEach(card => {
+    const memo = memoMap.get(card.dataset.mid);
+    if (!memo) return;
+    const wr = wrapRects[memo.pageIdx];
+    if (wr) card.style.top = ((wr.top - icr.top) + memo.ratioY * wr.height) + 'px';
   });
 }
 
 function renderAllCards(ep) {
-  const memoCol=document.getElementById('memo-col');
+  const memoCol=el().memoCol;
   memoCol.querySelectorAll('.mcard').forEach(el=>el.remove());
   (ep.memos||[]).forEach(memo=>memoCol.appendChild(buildCard(memo,ep)));
   setTimeout(()=>placeAll(ep),50);
@@ -1375,14 +1402,17 @@ function renderAllCards(ep) {
 // ══════════════════════════════════════════════════════════
 // BUILD CARD
 // ══════════════════════════════════════════════════════════
+const CARD_COLORS=[{n:'검정',v:'#1a1a1a'},{n:'회색',v:'#666'},{n:'빨강',v:'#c0392b'},{n:'파랑',v:'#1a5fa8'},{n:'초록',v:'#1e7e34'}];
+const CARD_BADGE ={memo:'bm',feedback:'bf',plot:'bp',note:'bn'};
+const CARD_LABEL ={memo:'메모',feedback:'피드백',plot:'복선',note:'아이디어'};
+
 function buildCard(memo,ep){
-  const COLORS=[{n:'검정',v:'#1a1a1a'},{n:'회색',v:'#666'},{n:'빨강',v:'#c0392b'},{n:'파랑',v:'#1a5fa8'},{n:'초록',v:'#1e7e34'}];
   const card=document.createElement('div');
   card.className=`mcard t-${memo.type}`;
   card.dataset.mid=memo.id;
   card.style.top='0px';
-  const bc={memo:'bm',feedback:'bf',plot:'bp',note:'bn'}[memo.type]||'bm';
-  const tl={memo:'메모',feedback:'피드백',plot:'복선',note:'아이디어'}[memo.type]||memo.type;
+  const bc=CARD_BADGE[memo.type]||'bm';
+  const tl=CARD_LABEL[memo.type]||memo.type;
   card.innerHTML=`
     <div class="mhead">
       <span class="mbadge ${bc}">${tl}</span>
@@ -1395,7 +1425,7 @@ function buildCard(memo,ep){
       <button class="tb-b" data-cmd="underline"><u>U</u></button>
       <button class="tb-b" data-cmd="strikeThrough"><s>S</s></button>
       <span class="tbsep"></span>
-      ${COLORS.map(c=>`<div class="cdot" style="background:${c.v}" title="${c.n}" data-color="${c.v}"></div>`).join('')}
+      ${CARD_COLORS.map(c=>`<div class="cdot" style="background:${c.v}" title="${c.n}" data-color="${c.v}"></div>`).join('')}
       <span class="tbsep"></span>
       <button class="tb-b imgbtn" title="이미지 첨부">🖼</button>
     </div>
@@ -1432,22 +1462,29 @@ function buildCard(memo,ep){
 
   // drag
   const mhead=card.querySelector('.mhead');
-  let drag=false,sy=0,st=0;
+  let drag=false,sy=0,st=0,_dragRaf=null;
   mhead.addEventListener('mousedown',e=>{if(e.target.classList.contains('mdel'))return;drag=true;sy=e.clientY;st=parseFloat(card.style.top)||0;document.body.style.userSelect='none';e.preventDefault();});
-  window.addEventListener('mousemove',e=>{if(!drag)return;const nt=Math.max(0,st+(e.clientY-sy));card.style.top=nt+'px';updRatio(memo,nt,ep);});
+  window.addEventListener('mousemove',e=>{
+    if(!drag)return;
+    const nt=Math.max(0,st+(e.clientY-sy));
+    card.style.top=nt+'px';
+    if(_dragRaf) return;
+    _dragRaf=requestAnimationFrame(()=>{updRatio(memo,nt,ep);_dragRaf=null;});
+  });
   window.addEventListener('mouseup',()=>{if(drag){drag=false;document.body.style.userSelect='';scheduleAutoSave();}});
   return card;
 }
 function updTbar(card){card.querySelectorAll('[data-cmd]').forEach(btn=>{try{btn.classList.toggle('on',document.queryCommandState(btn.dataset.cmd));}catch(e){}});}
 function updRatio(memo,top,ep){
-  const imgCol=document.getElementById('img-col');
+  const imgCol=el().imgCol;
   const icr=imgCol.getBoundingClientRect();
-  const wraps=imgCol.querySelectorAll('.img-wrap');
+  const wraps=Array.from(imgCol.querySelectorAll('.img-wrap'));
+  const rects=wraps.map(w=>w.getBoundingClientRect());
   let bi=0,bd=Infinity;
-  wraps.forEach((w,i)=>{const r=w.getBoundingClientRect();const m=(r.top-icr.top)+r.height*0.5;const d=Math.abs(top-m);if(d<bd){bd=d;bi=i;}});
+  rects.forEach((r,i)=>{const mid=(r.top-icr.top)+r.height*0.5;const d=Math.abs(top-mid);if(d<bd){bd=d;bi=i;}});
   memo.pageIdx=bi;
-  const wr=wraps[bi];
-  if(wr){const r=wr.getBoundingClientRect();memo.ratioY=Math.max(0,Math.min(1,(top-(r.top-icr.top))/r.height));}
+  const r=rects[bi];
+  if(r) memo.ratioY=Math.max(0,Math.min(1,(top-(r.top-icr.top))/r.height));
 }
 async function insertImg(file,editor,memo,ep){
   if(!file)return;
@@ -1482,7 +1519,7 @@ function pickType(type){
   const memo={id:uid(),type,html:'',ratioY:S.pRatioY,pageIdx:S.pPageIdx};
   if(!ep.memos)ep.memos=[];
   ep.memos.push(memo);
-  const memoCol=document.getElementById('memo-col');
+  const memoCol=el().memoCol;
   const card=buildCard(memo,ep);
   memoCol.appendChild(card);
   setTimeout(()=>{card.style.top=cardTop(memo)+'px';placeAll(ep);card.querySelector('.meditor').focus();},30);
@@ -1493,9 +1530,10 @@ function pickType(type){
 // CURSOR HINT
 // ══════════════════════════════════════════════════════════
 const chint=document.getElementById('chint');
-let hon=false;
+let hon=false, _hintRaf=null;
+// DOMContentLoaded 이후에 el() 캐시 사용 가능하므로 직접 참조
 document.getElementById('img-col').addEventListener('mouseover',e=>{
-  if(DS.mode) return;  // 드로잉 모드에서는 완전 차단
+  if(DS.mode) return;
   if(e.target.closest&&e.target.closest('.img-wrap')){chint.style.display='block';hon=true;}
 });
 document.getElementById('img-col').addEventListener('mouseout',e=>{
@@ -1503,7 +1541,12 @@ document.getElementById('img-col').addEventListener('mouseout',e=>{
 });
 document.addEventListener('mousemove',e=>{
   if(DS.mode){chint.style.display='none';hon=false;return;}
-  if(hon){chint.style.left=(e.clientX+14)+'px';chint.style.top=(e.clientY-26)+'px';}
+  if(!hon||_hintRaf) return;
+  const cx=e.clientX, cy=e.clientY;
+  _hintRaf=requestAnimationFrame(()=>{
+    chint.style.left=(cx+14)+'px';chint.style.top=(cy-26)+'px';
+    _hintRaf=null;
+  });
 });
 
 // ══════════════════════════════════════════════════════════
@@ -1512,8 +1555,9 @@ document.addEventListener('mousemove',e=>{
 function zBy(d){S.zoom=Math.min(160,Math.max(40,S.zoom+d));applyZ();}
 function zReset(){S.zoom=100;applyZ();}
 function applyZ(){
-  document.getElementById('img-col').style.zoom=S.zoom/100;
-  document.getElementById('zval').textContent=S.zoom+'%';
+  const E=el();
+  E.imgCol.style.zoom=S.zoom/100;
+  $('zval').textContent=S.zoom+'%';
   const ep=curEp();if(!ep)return;
   setTimeout(()=>placeAll(ep),80);
 }
@@ -1566,12 +1610,6 @@ function setBulkPatternCustom(){
 // {페이지} → 숫자 캡처그룹 2 (또는 무시)
 // 나머지 문자는 이스케이프 후 그대로 매칭
 function patternToRegex(pattern){
-  // 확장자 앞에 .*를 넣어 중간에 여분 문자열이 있어도 매칭되도록
-  let src = pattern
-    .replace(/[.+^${}()|[\]\\]/g, c => c==='{' || c==='}' ? c : '\\'+c)  // 특수문자 이스케이프 ({} 제외)
-    .replace('\\{','(?:').replace('\\}','(?:')  // 이건 안 씀, 아래에서 처리
-  ;
-  // 다시 깔끔하게 처리
   let regStr = '';
   let i = 0;
   while(i < pattern.length){
@@ -1640,56 +1678,50 @@ function bulkPatternChange(){
   if(Object.keys(S.pbg).length) bfp_reparse();
 }
 
-function bfp_reparse(){
-  // 패턴 변경 시: 누적된 파일 전체를 재파싱 (누적은 유지, 그룹만 재계산)
-  if(!S._lastBulkFiles) return;
-  const arr = S._lastBulkFiles.slice().sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
-  S.pbg = grpEp(arr);
-  const keys=Object.keys(S.pbg).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+function _renderBulkPreview(keys, totalFiles){
   document.getElementById('bprev').innerHTML=keys.map(k=>`
     <div style="margin-bottom:10px">
       <div style="font-size:11px;color:var(--ac);font-weight:600;margin-bottom:3px">📌 ${esc(k)} — ${S.pbg[k].length}페이지</div>
       ${S.pbg[k].slice(0,2).map(f=>`<div class="fi"><span>🖼️</span><span class="fn">${esc(f.name)}</span></div>`).join('')}
       ${S.pbg[k].length>2?`<div style="font-size:10px;color:var(--t3);padding:2px 10px">...외 ${S.pbg[k].length-2}장</div>`:''}
     </div>`).join('');
+  if(totalFiles !== undefined){
+    const countEl=document.getElementById('bulk-file-count');
+    if(countEl) countEl.textContent=`총 ${totalFiles}개 파일 · ${keys.length}개 회차 인식됨`;
+  }
+}
+
+function bfp_reparse(){
+  if(!S._lastBulkFiles) return;
+  const arr=S._lastBulkFiles.slice().sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
+  S.pbg=grpEp(arr);
+  const keys=Object.keys(S.pbg).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+  _renderBulkPreview(keys);
 }
 
 function grpEp(files){
-  const pat = document.getElementById('bulk-pattern')?.value || '';
+  const pat=document.getElementById('bulk-pattern')?.value||'';
   const g={};
-  files.forEach(f=>{
-    const k = epKeyFromPattern(f.name, pat);
-    (g[k]=g[k]||[]).push(f);
-  });
+  files.forEach(f=>{ const k=epKeyFromPattern(f.name,pat); (g[k]=g[k]||[]).push(f); });
   return g;
 }
 
 function clearBulkFiles(){
-  S._lastBulkFiles = null;
-  S.pbg = {};
+  S._lastBulkFiles=null; S.pbg={};
   document.getElementById('bprev').innerHTML='';
   document.getElementById('bulk-file-count').textContent='';
   document.getElementById('bfi').value='';
 }
 
 function bfp(files){
-  // 기존 파일에 누적 (파일명 기준 중복 제거)
-  const existing = S._lastBulkFiles ? [...S._lastBulkFiles] : [];
-  const existingNames = new Set(existing.map(f=>f.name));
-  const newFiles = [...files].filter(f=>!existingNames.has(f.name));
-  S._lastBulkFiles = [...existing, ...newFiles];
-  const arr = S._lastBulkFiles.slice().sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
+  const existing=S._lastBulkFiles?[...S._lastBulkFiles]:[];
+  const existingNames=new Set(existing.map(f=>f.name));
+  const newFiles=[...files].filter(f=>!existingNames.has(f.name));
+  S._lastBulkFiles=[...existing,...newFiles];
+  const arr=S._lastBulkFiles.slice().sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
   S.pbg=grpEp(arr);
-  const totalFiles = arr.length;
   const keys=Object.keys(S.pbg).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
-  const countEl = document.getElementById('bulk-file-count');
-  if(countEl) countEl.textContent = `총 ${totalFiles}개 파일 · ${keys.length}개 회차 인식됨`;
-  document.getElementById('bprev').innerHTML=keys.map(k=>`
-    <div style="margin-bottom:10px">
-      <div style="font-size:11px;color:var(--ac);font-weight:600;margin-bottom:3px">📌 ${esc(k)} — ${S.pbg[k].length}페이지</div>
-      ${S.pbg[k].slice(0,2).map(f=>`<div class="fi"><span>🖼️</span><span class="fn">${esc(f.name)}</span></div>`).join('')}
-      ${S.pbg[k].length>2?`<div style="font-size:10px;color:var(--t3);padding:2px 10px">...외 ${S.pbg[k].length-2}장</div>`:''}
-    </div>`).join('');
+  _renderBulkPreview(keys, arr.length);
 }
 
 async function confirmBulk(){
@@ -1718,46 +1750,24 @@ async function confirmBulk(){
 // ══════════════════════════════════════════════════════════
 // MODAL
 // ══════════════════════════════════════════════════════════
-function om(id){document.getElementById(id).classList.add('on');}
-function cm(id){document.getElementById(id).classList.remove('on');}
+function om(id){$(id).classList.add('on');}
+function cm(id){$(id).classList.remove('on');}
 document.querySelectorAll('.mbd').forEach(bd=>bd.addEventListener('click',e=>{if(e.target===bd)bd.classList.remove('on');}));
 
 // ══════════════════════════════════════════════════════════
 // OVERLAY
 // ══════════════════════════════════════════════════════════
-function showOv(m){document.getElementById('exov').classList.add('on');setMsg(m);}
-function hideOv(){document.getElementById('exov').classList.remove('on');setP(0);}
-function setMsg(m){document.getElementById('exmsg').textContent=m;}
-function setP(p){document.getElementById('expb').style.width=p+'%';}
+const _exov=$('exov'), _exmsg=$('exmsg'), _expb=$('expb');
+function showOv(m){_exov.classList.add('on');setMsg(m);}
+function hideOv(){_exov.classList.remove('on');setP(0);}
+function setMsg(m){_exmsg.textContent=m;}
+function setP(p){_expb.style.width=p+'%';}
 
 // ══════════════════════════════════════════════════════════
 // SAVE / LOAD  (memos only — images stay as data:URLs)
 // ══════════════════════════════════════════════════════════
 function saveProject(){
-  // 드로잉 캔버스 동기화
-  const depNow = curEp();
-  if (depNow) {
-    document.querySelectorAll('.draw-canvas').forEach(cv => {
-      const idx = parseInt(cv.closest('.img-wrap')?.dataset?.idx ?? -1);
-      if (idx >= 0) {
-        if (!depNow.drawings) depNow.drawings = {};
-        depNow.drawings[idx] = cv.toDataURL('image/png');
-      }
-    });
-  }
-
-  // 저장 전: 화면에 열린 모든 메모 에디터 내용을 memo 객체에 강제 동기화
-  // (현재 열린 회차의 카드만 DOM에 존재하므로 현재 회차만 처리하면 됨)
-  const ep = curEp();
-  if (ep) {
-    document.querySelectorAll('.mcard').forEach(card => {
-      const mid    = card.dataset.mid;
-      const memo   = (ep.memos || []).find(m => m.id === mid);
-      const editor = card.querySelector('.meditor');
-      if (memo && editor) memo.html = editor.innerHTML;
-    });
-  }
-
+  syncCurrentEpState();
   // 이미지 data:URL 포함 전체 저장 (완전 복원 가능)
   const data = {
     v: 5,
@@ -1877,21 +1887,7 @@ async function exportJPG() {
       img.onload = () => res(img); img.onerror = rej; img.src = p.url;
     })));
 
-    // 메모 내 이미지 캐시
-    const memoImgCache = {};
-    for (const memo of (ep.memos||[])) {
-      const tmp = document.createElement('div');
-      tmp.innerHTML = memo.html || '';
-      for (const el of tmp.querySelectorAll('img')) {
-        const src = el.getAttribute('src')||'';
-        if (src && !memoImgCache[src]) {
-          memoImgCache[src] = await new Promise(res => {
-            const i = new Image(); i.onload=()=>res(i); i.onerror=()=>res(null); i.src=src;
-          });
-        }
-      }
-    }
-    window._pdfMemoImgCache = memoImgCache;
+    await loadMemoImgCache(ep.memos);
 
     // 텍스트 측정용 캔버스
     const msrCv = document.createElement('canvas');
@@ -2044,6 +2040,25 @@ async function exportJPG() {
 // · Canvas에 그리는 src는 전부 data:URL → taint 없음
 // ══════════════════════════════════════════════════════════
 
+// ── 공통: 메모 내 이미지 캐시 로드 ──
+async function loadMemoImgCache(memos) {
+  const cache = {};
+  for (const memo of (memos || [])) {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = memo.html || '';
+    for (const el of tmp.querySelectorAll('img')) {
+      const src = el.getAttribute('src') || '';
+      if (src && !cache[src]) {
+        cache[src] = await new Promise(res => {
+          const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src;
+        });
+      }
+    }
+  }
+  window._pdfMemoImgCache = cache;
+  return cache;
+}
+
 // html2canvas 불필요 — Canvas 2D API로 직접 합성
 // jsPDF만 로드
 async function loadLibs() {
@@ -2103,20 +2118,7 @@ async function exportPDF() {
       img.onload = () => res(img); img.onerror = rej; img.src = p.url;
     })));
 
-    const memoImgCache = {};
-    window._pdfMemoImgCache = memoImgCache;
-    for (const memo of (ep.memos||[])) {
-      const tmp = document.createElement('div');
-      tmp.innerHTML = memo.html || '';
-      for (const el of tmp.querySelectorAll('img')) {
-        const src = el.getAttribute('src')||'';
-        if (src && !memoImgCache[src]) {
-          memoImgCache[src] = await new Promise(res => {
-            const i = new Image(); i.onload=()=>res(i); i.onerror=()=>res(null); i.src=src;
-          });
-        }
-      }
-    }
+    await loadMemoImgCache(ep.memos);
     await document.fonts.ready;
 
     const msrCv = document.createElement('canvas');
@@ -2319,10 +2321,10 @@ async function exportPDF() {
 }
 
 function wrapText(ctx, text, maxW) {
-  const words = text.split('');
+  const chars = [...text]; // Array.from: 유니코드(이모지·한글) 안전
   const lines = [];
   let cur = '';
-  for (const ch of words) {
+  for (const ch of chars) {
     const test = cur + ch;
     if (ctx.measureText(test).width > maxW && cur !== '') {
       lines.push(cur);
@@ -2574,19 +2576,17 @@ function stepOpacity(delta){
 // 드로잉 모드 토글
 function toggleDrawMode(){
   DS.mode=!DS.mode;
-  const btn=document.getElementById('draw-mode-btn');
-  const tb =document.getElementById('draw-toolbar');
-  const hint=document.getElementById('chint');
+  const btn=$('draw-mode-btn');
+  const tb =$('draw-toolbar');
+  const hint=chint; // 이미 캐시된 변수
   if(DS.mode){
     document.body.classList.add('draw-active');
     btn.classList.add('active'); btn.style.background='var(--ac)'; btn.style.color='#1a1200';
-    // 버튼 아래에 툴바 위치 설정
     const r=btn.getBoundingClientRect();
     tb.style.left = r.left + 'px';
     tb.style.top  = (r.bottom + 8) + 'px';
     tb.style.bottom = 'auto';
     tb.classList.add('visible');
-    // 화살표 위치 보정 (툴바가 오른쪽으로 넘칠 경우)
     requestAnimationFrame(()=>{
       const tbr=tb.getBoundingClientRect();
       if(tbr.right > window.innerWidth - 8){
@@ -2595,13 +2595,13 @@ function toggleDrawMode(){
     });
     document.querySelectorAll('.draw-canvas').forEach(cv=>{ cv.classList.add('draw-mode'); cv.classList.remove('memo-mode'); });
     applyDrawCursor();
-    if(hint)hint.style.display='none';
+    if(hint) hint.style.display='none';
   } else {
     document.body.classList.remove('draw-active');
     btn.classList.remove('active'); btn.style.background=''; btn.style.color='';
     tb.classList.remove('visible');
     document.querySelectorAll('.draw-canvas').forEach(cv=>{ cv.classList.remove('draw-mode'); cv.classList.add('memo-mode'); cv.style.cursor='crosshair'; });
-    document.querySelectorAll('.img-wrap').forEach(w=>{ w.style.cursor='crosshair'; });
+    el().imgCol.querySelectorAll('.img-wrap').forEach(w=>{ w.style.cursor='crosshair'; });
   }
 }
 
@@ -2874,37 +2874,32 @@ function pushUndo(cv, pageIdx){
   DS.redos[pageIdx]=[];
 }
 
-function drawUndo(){
-  const pageIdx=DS.curPageIdx; if(pageIdx<0)return;
-  const stack=DS.stacks[pageIdx]; if(!stack||!stack.length)return;
-  const cv=getDrawCvByPage(pageIdx); if(!cv)return;
+// 공통: src 스택에서 pop → dst 스택에 현재 상태 push → 복원
+function _applyHistorySnap(srcStack, dstStack, cv, pageIdx){
   const ctx=cv.getContext('2d');
-  if(!DS.redos[pageIdx])DS.redos[pageIdx]=[];
-  // 현재 캔버스 상태를 redo에 저장
-  DS.redos[pageIdx].push({
+  if(!dstStack[pageIdx]) dstStack[pageIdx]=[];
+  dstStack[pageIdx].push({
     img: ctx.getImageData(0,0,cv.width,cv.height),
     strokes: JSON.parse(JSON.stringify(DS.strokes[pageIdx]||[]))
   });
-  const snap=stack.pop();
+  const snap=srcStack[pageIdx].pop();
   ctx.putImageData(snap.img,0,0);
-  DS.strokes[pageIdx] = JSON.parse(JSON.stringify(snap.strokes||[]));
+  DS.strokes[pageIdx]=JSON.parse(JSON.stringify(snap.strokes||[]));
   saveDrawing(cv,pageIdx);
+}
+
+function drawUndo(){
+  const pageIdx=DS.curPageIdx; if(pageIdx<0)return;
+  if(!DS.stacks[pageIdx]?.length)return;
+  const cv=getDrawCvByPage(pageIdx); if(!cv)return;
+  _applyHistorySnap(DS.stacks, DS.redos, cv, pageIdx);
 }
 
 function drawRedo(){
   const pageIdx=DS.curPageIdx; if(pageIdx<0)return;
-  const redo=DS.redos[pageIdx]; if(!redo||!redo.length)return;
+  if(!DS.redos[pageIdx]?.length)return;
   const cv=getDrawCvByPage(pageIdx); if(!cv)return;
-  const ctx=cv.getContext('2d');
-  const snap=redo.pop();
-  if(!DS.stacks[pageIdx])DS.stacks[pageIdx]=[];
-  DS.stacks[pageIdx].push({
-    img: ctx.getImageData(0,0,cv.width,cv.height),
-    strokes: JSON.parse(JSON.stringify(DS.strokes[pageIdx]||[]))
-  });
-  ctx.putImageData(snap.img,0,0);
-  DS.strokes[pageIdx] = JSON.parse(JSON.stringify(snap.strokes||[]));
-  saveDrawing(cv,pageIdx);
+  _applyHistorySnap(DS.redos, DS.stacks, cv, pageIdx);
 }
 
 function drawClearPage(){
@@ -2946,9 +2941,4 @@ initDrawPalette();
   <div class="spt-desc">이미지가 길수록 숫자를 높이세요.<br>낮으면 이미지가 잘려서 출력될 수 있습니다.</div>
   <table class="spt-table">
     <tr><td>1만px 이하</td><td>→</td><td>1분할</td></tr>
-    <tr><td>1만~2만px</td><td>→</td><td>2분할</td></tr>
-    <tr><td>2만~3만px</td><td>→</td><td>3분할</td></tr>
-    <tr><td>3만px 이상</td><td>→</td><td>4+</td></tr>
-  </table>
-  <div class="spt-note">※ 이미지 원본 세로 픽셀 기준</div>
-</div>
+    <tr><td>1만~2만px</

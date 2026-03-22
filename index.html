@@ -27,6 +27,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx);
 .btn:hover{border-color:var(--ac);color:var(--ac);}
 .btn.pri{background:var(--ac);color:#1a1200;border-color:var(--ac);font-weight:700;}
 .btn.pri:hover{background:#ffd060;}
+.export-item{padding:10px 16px;font-size:12px;cursor:pointer;color:var(--tx);transition:background .1s;}
+.export-item:hover{background:var(--s3);}
 
 /* MAIN */
 #main{display:flex;flex:1;overflow:hidden;}
@@ -88,7 +90,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx);
 #img-col{flex:1;min-width:0;padding:24px 8px 120px 20px;display:flex;flex-direction:column;align-items:center;gap:20px;}
 .img-wrap{width:100%;max-width:600px;position:relative;cursor:crosshair;flex-shrink:0;}
 .img-wrap img{width:100%;height:auto;display:block;border-radius:4px;box-shadow:0 4px 24px rgba(0,0,0,.55);pointer-events:none;user-select:none;}
-.pg-label{position:absolute;top:7px;left:7px;background:rgba(0,0,0,.65);color:var(--ac);font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 7px;border-radius:3px;pointer-events:none;}
+.pg-label{position:absolute;top:7px;left:7px;background:rgba(0,0,0,.65);color:var(--ac);font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 7px;border-radius:3px;pointer-events:none;display:flex;align-items:center;gap:5px;}
+.pg-del-btn{background:none;border:none;cursor:pointer;font-size:11px;opacity:0;transition:opacity .15s;pointer-events:auto;padding:0;line-height:1;}
+.img-wrap:hover .pg-del-btn{opacity:.7;}
+.pg-del-btn:hover{opacity:1 !important;}
 .h-guide{position:absolute;left:0;right:0;height:1px;background:var(--ac);opacity:0;pointer-events:none;box-shadow:0 0 5px rgba(240,192,64,.6);}
 .img-wrap:hover .h-guide{opacity:.6;}
 /* 드로잉 모드에서 h-guide·chint 숨김 */
@@ -326,6 +331,13 @@ body.draw-active #chint{display:none !important;}
 
 #chint{position:fixed;pointer-events:none;background:rgba(8,8,14,.85);color:var(--ac);font-size:11px;padding:3px 9px;border-radius:4px;display:none;z-index:100;white-space:nowrap;border:1px solid rgba(240,192,64,.3);}
 
+/* ── 커스텀 Confirm 팝업 ── */
+#confirm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:900;align-items:center;justify-content:center;}
+#confirm-overlay.on{display:flex;}
+#confirm-box{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:24px 26px;width:340px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.7);}
+#confirm-msg{font-size:13px;color:var(--tx);line-height:1.7;margin-bottom:20px;white-space:pre-line;}
+#confirm-btns{display:flex;gap:8px;justify-content:flex-end;}
+
 /* 자동저장 표시기 */
 #save-indicator{
   position:fixed;bottom:18px;right:18px;
@@ -366,7 +378,11 @@ body.draw-active #chint{display:none !important;}
     <span style="font-size:11px;color:var(--t2);">분할</span>
     <button class="btn" id="split-inc" onclick="changeSplit(1)" style="padding:4px 8px;font-size:14px;line-height:1;">＋</button>
   </div>
-  <button class="btn pri" id="btn-export" style="display:none" onclick="exportPDF()">⬇ PDF 내보내기</button>
+  <button class="btn pri" id="btn-export" style="display:none" onclick="toggleExportMenu(event)">⬇ 내보내기 ▾</button>
+  <div id="export-menu" style="display:none;position:fixed;background:var(--sf);border:1px solid var(--bd);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:300;min-width:160px;overflow:hidden;">
+    <div class="export-item" onclick="closeExportMenu();exportPDF()">📄 PDF로 내보내기</div>
+    <div class="export-item" onclick="closeExportMenu();exportJPG()">🖼️ JPG로 내보내기</div>
+  </div>
 </div>
 
 <div id="main">
@@ -374,7 +390,6 @@ body.draw-active #chint{display:none !important;}
   <div id="sidebar">
     <div id="sb-head">
       <span class="lbl">작품 목록</span>
-      <button class="sb-icon-btn" title="새 작품 폴더" onclick="openNewProjModal()">＋</button>
     </div>
     <div id="tree">
 
@@ -480,12 +495,21 @@ body.draw-active #chint{display:none !important;}
 
 <!-- EDIT EP MODAL -->
 <div class="mbd" id="edit-ep-modal">
-  <div class="modal" style="width:360px">
+  <div class="modal" style="width:420px">
     <button class="mx" onclick="cm('edit-ep-modal')">×</button>
     <h2>회차 수정</h2>
     <input type="hidden" id="eid">
     <div class="fr"><label>회차 번호</label><input type="number" id="edit-ep-num" min="1"></div>
     <div class="fr"><label>회차 제목</label><input type="text" id="edit-ep-title"></div>
+    <div class="fr">
+      <label>원고 이미지 추가</label>
+      <div class="dz" id="edit-dz" onclick="document.getElementById('edit-fi').click()" ondragover="dzo(event,'edit-dz')" ondragleave="dzl(event,'edit-dz')" ondrop="editDzd(event)">
+        <div class="di" style="font-size:20px">🖼️</div>클릭하거나 드래그하여 추가할 이미지 선택<br>
+        <small style="color:var(--t3)">파일명 순 정렬 · 번호 없으면 최하단</small>
+      </div>
+      <input type="file" id="edit-fi" multiple accept="image/*" style="display:none" onchange="editFp(this.files)">
+      <div class="flist" id="edit-fl" style="max-height:120px"></div>
+    </div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
       <button class="btn" onclick="cm('edit-ep-modal')">취소</button>
       <button class="btn pri" onclick="confirmEditEp()">저장</button>
@@ -643,6 +667,17 @@ body.draw-active #chint{display:none !important;}
   </div>
 </div>
 
+<!-- 커스텀 Confirm 팝업 -->
+<div id="confirm-overlay">
+  <div id="confirm-box">
+    <div id="confirm-msg"></div>
+    <div id="confirm-btns">
+      <button class="btn" id="confirm-cancel">취소</button>
+      <button class="btn" id="confirm-ok" style="background:#c03030;border-color:#c03030;color:#fff;">삭제</button>
+    </div>
+  </div>
+</div>
+
 <!-- 자동저장 표시기 -->
 <div id="save-indicator">자동저장됨</div>
 
@@ -779,8 +814,37 @@ function showSaveIndicator() {
 }
 </script>
 <script>
-// ══════════════════════════════════════════════════════════
-// DATA MODEL
+// ── 커스텀 Confirm (브라우저 confirm() 대체) ──
+function showConfirm(msg, onOk) {
+  const overlay = document.getElementById('confirm-overlay');
+  document.getElementById('confirm-msg').textContent = msg;
+  overlay.classList.add('on');
+
+  function cleanup() {
+    overlay.classList.remove('on');
+  }
+
+  function handleOk() {
+    cleanup();
+    document.getElementById('confirm-ok').removeEventListener('click', handleOk);
+    document.getElementById('confirm-cancel').removeEventListener('click', handleCancel);
+    onOk();
+  }
+  function handleCancel() {
+    cleanup();
+    document.getElementById('confirm-ok').removeEventListener('click', handleOk);
+    document.getElementById('confirm-cancel').removeEventListener('click', handleCancel);
+  }
+
+  // 기존 리스너 제거 후 새로 등록
+  const okBtn = document.getElementById('confirm-ok');
+  const cancelBtn = document.getElementById('confirm-cancel');
+  okBtn.replaceWith(okBtn.cloneNode(true));
+  cancelBtn.replaceWith(cancelBtn.cloneNode(true));
+  document.getElementById('confirm-ok').addEventListener('click', handleOk);
+  document.getElementById('confirm-cancel').addEventListener('click', handleCancel);
+}
+
 // S.projs = [{id, title, open:bool, eps:[{id,num,title,pages,memos}]}]
 // memo = {id, type, html, ratioY, pageIdx}
 // pages[].url is always a data:URL (local file, no CORS issue on canvas)
@@ -949,11 +1013,12 @@ function confirmEditProj() {
 function deleteProj(id) {
   const p = S.projs.find(p=>p.id===id);
   if(!p) return;
-  if(!confirm(`"${p.title}" 폴더를 삭제하시겠습니까?\n포함된 모든 회차와 메모가 삭제됩니다.`)) return;
-  S.projs = S.projs.filter(p=>p.id!==id);
-  if(S.curProjId===id) { S.curProjId=null; S.curEpId=null; clearCanvas(); }
-  renderTree();
-  scheduleAutoSave();
+  showConfirm(`"${p.title}" 폴더를 삭제하시겠습니까?\n포함된 모든 회차와 메모가 삭제됩니다.`, ()=>{
+    S.projs = S.projs.filter(p=>p.id!==id);
+    if(S.curProjId===id) { S.curProjId=null; S.curEpId=null; clearCanvas(); }
+    renderTree();
+    scheduleAutoSave();
+  });
 }
 
 // ══════════════════════════════════════════════════════════
@@ -971,7 +1036,7 @@ function selEp(projId, epId) {
   document.getElementById('zbar').classList.add('on');
   // 드로잉 툴 표시 & 상태 초기화
   document.getElementById('btn-draw-toggle').classList.add('visible');
-  DS.stacks={}; DS.redos={}; DS.curPageIdx=-1; DS.drawing=false;
+  DS.stacks={}; DS.redos={}; DS.strokes={}; DS.curPageIdx=-1; DS.drawing=false; DS.curStroke=null;
   renderTree();
   buildCanvas(ep);
 }
@@ -1004,8 +1069,16 @@ function openNewEpModal() {
   om('new-ep-modal');
 }
 function nfp(files) {
-  S.pf = [...files].sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
-  document.getElementById('nfl').innerHTML = S.pf.map(f=>`<div class="fi"><span>🖼️</span><span class="fn">${esc(f.name)}</span><span class="fsz">${(f.size/1024).toFixed(0)}KB</span></div>`).join('');
+  // 기존 파일에 누적 (파일명 기준 중복 제거)
+  const existing = S.pf || [];
+  const existingNames = new Set(existing.map(f=>f.name));
+  const newFiles = [...files].filter(f=>!existingNames.has(f.name));
+  S.pf = [...existing, ...newFiles].sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
+  document.getElementById('nfl').innerHTML =
+    `<div style="font-size:10px;color:var(--t3);padding:3px 2px 4px;">총 ${S.pf.length}개 파일</div>` +
+    S.pf.map(f=>`<div class="fi"><span>🖼️</span><span class="fn">${esc(f.name)}</span><span class="fsz">${(f.size/1024).toFixed(0)}KB</span></div>`).join('');
+  // 다시 선택할 수 있도록 input 초기화
+  document.getElementById('nfi').value = '';
 }
 async function confirmNewEp() {
   const projId = document.getElementById('nep-proj').value;
@@ -1024,21 +1097,98 @@ async function confirmNewEp() {
   scheduleAutoSave();
 }
 
+// 회차 수정 모달 열 때 파일 목록 초기화
 function openEditEp(epId) {
   const ep = allEps().find(e=>e.id===epId);
   if(!ep)return;
   document.getElementById('eid').value = epId;
   document.getElementById('edit-ep-num').value = ep.num;
   document.getElementById('edit-ep-title').value = ep.title||'';
+  // 추가 이미지 목록 초기화
+  S._editPf = [];
+  document.getElementById('edit-fl').innerHTML = '';
+  document.getElementById('edit-fi').value = '';
   om('edit-ep-modal');
 }
-function confirmEditEp() {
+
+// 추가 이미지 선택
+function editFp(files) {
+  const existing = S._editPf || [];
+  const existingNames = new Set(existing.map(f=>f.name));
+  const newFiles = [...files].filter(f=>!existingNames.has(f.name));
+  S._editPf = [...existing, ...newFiles];
+  renderEditFl();
+  document.getElementById('edit-fi').value = '';
+}
+function editDzd(e) {
+  e.preventDefault(); dzl(e,'edit-dz');
+  editFp(e.dataTransfer.files);
+}
+function renderEditFl() {
+  const fl = document.getElementById('edit-fl');
+  if (!S._editPf || !S._editPf.length) { fl.innerHTML = ''; return; }
+  fl.innerHTML =
+    `<div style="font-size:10px;color:var(--t3);padding:3px 2px 4px;">추가할 파일 ${S._editPf.length}개</div>` +
+    S._editPf.map(f=>`<div class="fi"><span>🖼️</span><span class="fn">${esc(f.name)}</span><span class="fsz">${(f.size/1024).toFixed(0)}KB</span></div>`).join('');
+}
+
+// 파일명에서 숫자 추출 (정렬용)
+function filePageNum(name) {
+  const m = name.match(/(\d+)/);
+  return m ? parseInt(m[m.length-1], 10) : Infinity; // 숫자 없으면 최하단
+}
+
+async function confirmEditEp() {
   const id    = document.getElementById('eid').value;
   const num   = parseInt(document.getElementById('edit-ep-num').value)||1;
   const title = document.getElementById('edit-ep-title').value.trim();
   const ep    = allEps().find(e=>e.id===id);
   if(!ep)return;
   ep.num=num; ep.title=title;
+
+  // 추가 이미지가 있으면 병합 후 정렬
+  if (S._editPf && S._editPf.length > 0) {
+    showOv('이미지 추가 중...');
+    const newPages = await files2pages(S._editPf);
+
+    // 정렬 전 기존 페이지의 원래 인덱스를 기억해둠
+    const oldPages = ep.pages.map((p, i) => ({ ...p, _oldIdx: i }));
+    const merged = [...oldPages, ...newPages.map(p => ({ ...p, _oldIdx: -1 }))];
+    merged.sort((a, b) => {
+      const na = filePageNum(a.name), nb = filePageNum(b.name);
+      if (na === nb) return a.name.localeCompare(b.name, undefined, {numeric:true});
+      return na - nb;
+    });
+
+    // 기존 페이지의 oldIdx → newIdx 매핑 생성
+    const idxMap = {}; // oldIdx → newIdx
+    merged.forEach((p, newIdx) => {
+      if (p._oldIdx >= 0) idxMap[p._oldIdx] = newIdx;
+    });
+
+    // 메모 pageIdx 재매핑 (기존 페이지에 있는 메모만, 새 페이지는 메모 없음)
+    ep.memos = (ep.memos || []).map(m => {
+      const newIdx = idxMap[m.pageIdx];
+      return newIdx !== undefined ? { ...m, pageIdx: newIdx } : m;
+    });
+
+    // 드로잉 인덱스 재매핑
+    if (ep.drawings) {
+      const newDrawings = {};
+      Object.keys(ep.drawings).forEach(k => {
+        const newIdx = idxMap[parseInt(k)];
+        if (newIdx !== undefined) newDrawings[newIdx] = ep.drawings[k];
+      });
+      ep.drawings = newDrawings;
+    }
+
+    // _oldIdx 제거 후 저장
+    ep.pages = merged.map(({ _oldIdx, ...p }) => p);
+    S._editPf = [];
+    hideOv();
+    if (ep.id === S.curEpId) buildCanvas(ep);
+  }
+
   cm('edit-ep-modal');
   renderTree();
   updateTopLabel();
@@ -1049,11 +1199,12 @@ function deleteEp(projId, epId) {
   if(!proj)return;
   const ep = proj.eps.find(e=>e.id===epId);
   if(!ep)return;
-  if(!confirm(`"${ep.num}화${ep.title?' '+ep.title:''}"을(를) 삭제하시겠습니까?`))return;
-  proj.eps = proj.eps.filter(e=>e.id!==epId);
-  if(S.curEpId===epId){S.curEpId=null;clearCanvas();}
-  renderTree();
-  scheduleAutoSave();
+  showConfirm(`"${ep.num}화${ep.title?' '+ep.title:''}"을(를) 삭제하시겠습니까?`, ()=>{
+    proj.eps = proj.eps.filter(e=>e.id!==epId);
+    if(S.curEpId===epId){S.curEpId=null;clearCanvas();}
+    renderTree();
+    scheduleAutoSave();
+  });
 }
 
 function clearCanvas() {
@@ -1118,6 +1269,39 @@ function buildCanvas(ep) {
     img.src=page.url; img.loading='lazy'; img.draggable=false;
 
     const label=document.createElement('div'); label.className='pg-label'; label.textContent='P'+(idx+1);
+
+    // 페이지 삭제 버튼
+    const delBtn=document.createElement('button');
+    delBtn.className='pg-del-btn'; delBtn.title='이 페이지 삭제'; delBtn.textContent='🗑';
+    delBtn.addEventListener('click', e=>{
+      e.stopPropagation();
+      const memoCount=(ep.memos||[]).filter(m=>m.pageIdx===idx).length;
+      const msg = memoCount > 0
+        ? `P${idx+1} 페이지를 삭제하시겠습니까?\n이 페이지의 메모 ${memoCount}개도 함께 삭제됩니다.`
+        : `P${idx+1} 페이지를 삭제하시겠습니까?`;
+      showConfirm(msg, ()=>{
+        // 삭제 페이지 메모 제거 + 뒤 페이지 메모 인덱스 1씩 당김
+        ep.memos = (ep.memos||[])
+          .filter(m => m.pageIdx !== idx)
+          .map(m => m.pageIdx > idx ? {...m, pageIdx: m.pageIdx - 1} : m);
+        // 드로잉 인덱스 재정렬
+        if(ep.drawings) {
+          const newDrawings = {};
+          Object.keys(ep.drawings).forEach(k => {
+            const ki = parseInt(k);
+            if(ki === idx) return;            // 삭제 페이지 드로잉 제거
+            const newK = ki > idx ? ki - 1 : ki;
+            newDrawings[newK] = ep.drawings[k];
+          });
+          ep.drawings = newDrawings;
+        }
+        ep.pages.splice(idx, 1);
+        scheduleAutoSave();
+        renderTree();
+        buildCanvas(ep);
+      });
+    });
+    label.appendChild(delBtn);
     const guide=document.createElement('div'); guide.className='h-guide';
     wrap.append(img,label,guide);
 
@@ -1638,6 +1822,214 @@ function loadProject(){
   inp.click();
 }
 
+// ── 내보내기 드롭다운 ──
+function toggleExportMenu(e) {
+  e.stopPropagation();
+  const menu = document.getElementById('export-menu');
+  const btn  = document.getElementById('btn-export');
+  const isOpen = menu.style.display !== 'none';
+  if (isOpen) { menu.style.display = 'none'; return; }
+  const r = btn.getBoundingClientRect();
+  menu.style.top  = (r.bottom + 6) + 'px';
+  menu.style.right = (window.innerWidth - r.right) + 'px';
+  menu.style.left = 'auto';
+  menu.style.display = 'block';
+}
+function closeExportMenu() {
+  document.getElementById('export-menu').style.display = 'none';
+}
+document.addEventListener('click', () => closeExportMenu());
+
+// ── JPG 내보내기 (이미지 + 드로잉 + 메모 오버레이) ──
+async function exportJPG() {
+  const ep = curEp();
+  if (!ep || !ep.pages.length) { alert('원고가 없습니다.'); return; }
+
+  showOv('JPG 내보내기 준비 중...');
+  setP(3);
+
+  try {
+    await document.fonts.ready;
+
+    const proj = S.projs.find(p => p.eps.some(e => e.id === S.curEpId));
+    const projTitle = proj ? proj.title + '_' : '';
+    const baseName  = `${projTitle}${ep.num}화${ep.title ? '_' + ep.title : ''}`;
+
+    // JPG 메모 스타일 상수 (PDF와 동일)
+    const FS = 13, LH = 19, HDR_H = 26;
+    const MEMO_W  = 300, INNER_W = MEMO_W - 18;
+    const SIDE_GAP = 14;
+    const C = {
+      border:{ memo:'#f0c040',feedback:'#e07050',plot:'#70b0e0',note:'#70c880' },
+      bg:    { memo:'#fdf9e3',feedback:'#fdecea',plot:'#e8f3fb',note:'#e8f8ec' },
+      text:  { memo:'#7a5c00',feedback:'#8a2c10',plot:'#1a4070',note:'#1a5028' },
+      label: { memo:'메모',   feedback:'피드백', plot:'복선',   note:'아이디어' },
+    };
+
+    // 이미지 로드
+    setMsg('이미지 로드 중...');
+    const loadedImgs = await Promise.all(ep.pages.map(p => new Promise((res, rej) => {
+      const img = new Image();
+      img.onload = () => res(img); img.onerror = rej; img.src = p.url;
+    })));
+
+    // 메모 내 이미지 캐시
+    const memoImgCache = {};
+    for (const memo of (ep.memos||[])) {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = memo.html || '';
+      for (const el of tmp.querySelectorAll('img')) {
+        const src = el.getAttribute('src')||'';
+        if (src && !memoImgCache[src]) {
+          memoImgCache[src] = await new Promise(res => {
+            const i = new Image(); i.onload=()=>res(i); i.onerror=()=>res(null); i.src=src;
+          });
+        }
+      }
+    }
+    window._pdfMemoImgCache = memoImgCache;
+
+    // 텍스트 측정용 캔버스
+    const msrCv = document.createElement('canvas');
+    msrCv.width = INNER_W + 40; msrCv.height = 4;
+    const mx = msrCv.getContext('2d');
+    mx.font = `${FS}px "Noto Sans KR",sans-serif`;
+
+    for (let pi = 0; pi < ep.pages.length; pi++) {
+      setMsg(`JPG 생성 중... ${pi + 1}/${ep.pages.length}`);
+      setP(10 + (pi / ep.pages.length) * 85);
+
+      const src  = loadedImgs[pi];
+      const natW = src.naturalWidth, natH = src.naturalHeight;
+
+      // 메모가 있으면 오른쪽에 메모 컬럼 추가, 없으면 이미지 단독
+      const pageMemos = (ep.memos||[]).filter(m => m.pageIdx === pi);
+      const hasMemos  = pageMemos.length > 0;
+      const CANVAS_W  = hasMemos ? natW + SIDE_GAP + MEMO_W : natW;
+      const imgH      = natH;
+      const scale     = 1; // 원본 해상도
+
+      // 메모 높이 사전 계산
+      const memoLayouts = pageMemos.map(memo => {
+        const anchorY = Math.round(memo.ratioY * imgH);
+        const blocks  = parsePdfBlocks(memo.html||'');
+        let cardH = HDR_H + 14;
+        mx.font = `${FS}px "Noto Sans KR",sans-serif`;
+        for (const blk of blocks) {
+          if (blk.type==='text') {
+            if (blk.text==='\n') cardH += LH;
+            else if (blk.text.trim()) cardH += wrapText(mx, blk.text, INNER_W).length*LH + 2;
+          } else if (blk.type==='img' && blk.img) {
+            const nw=blk.img.naturalWidth||1, nh=blk.img.naturalHeight||1;
+            cardH += Math.round((Math.min(INNER_W,nw)/nw)*nh) + 8;
+          }
+        }
+        return { memo, anchorY, blocks, cardH: cardH+10 };
+      });
+
+      // 캔버스 생성
+      const cv  = document.createElement('canvas');
+      cv.width  = CANVAS_W;
+      cv.height = imgH;
+      const ctx = cv.getContext('2d');
+
+      // 배경
+      ctx.fillStyle = '#e8e8e8';
+      ctx.fillRect(0, 0, CANVAS_W, imgH);
+
+      // 원본 이미지
+      ctx.drawImage(src, 0, 0, natW, imgH);
+
+      // 드로잉 레이어
+      if (ep.drawings && ep.drawings[pi]) {
+        await new Promise(res => {
+          const di = new Image();
+          di.onload = () => { ctx.drawImage(di, 0, 0, natW, imgH); res(); };
+          di.onerror = () => res();
+          di.src = ep.drawings[pi];
+        });
+      }
+
+      // 메모 카드 렌더링 (PDF 로직과 동일)
+      if (hasMemos) {
+        const memoX = natW + SIDE_GAP;
+        for (const {memo, anchorY, blocks, cardH} of memoLayouts) {
+          const lY   = anchorY;
+          const bCol = C.border[memo.type]||'#aaa';
+          const bgC  = C.bg[memo.type]||'#fffbe6';
+          const txC  = C.text[memo.type]||'#444';
+          const lbl  = C.label[memo.type]||memo.type;
+
+          // 연결선
+          ctx.setLineDash([4,3]); ctx.strokeStyle=bCol; ctx.lineWidth=1.5;
+          ctx.beginPath(); ctx.moveTo(natW, lY+12); ctx.lineTo(memoX, lY+12);
+          ctx.stroke(); ctx.setLineDash([]);
+
+          // 카드 배경
+          ctx.fillStyle=bgC; ctx.shadowColor='rgba(0,0,0,0.08)'; ctx.shadowBlur=4;
+          ctx.shadowOffsetX=1; ctx.shadowOffsetY=1;
+          roundRect(ctx, memoX, lY, MEMO_W, cardH, 5); ctx.fill();
+          ctx.shadowColor='transparent'; ctx.shadowBlur=0; ctx.shadowOffsetX=0; ctx.shadowOffsetY=0;
+          ctx.fillStyle=bCol; roundRect(ctx, memoX, lY, 4, cardH, [5,0,0,5]); ctx.fill();
+
+          // 헤더
+          ctx.fillStyle=txC; ctx.font=`bold ${FS}px "Noto Sans KR",sans-serif`;
+          ctx.fillText(lbl, memoX+9, lY+17);
+          ctx.fillStyle='#aaa'; ctx.font='10px monospace';
+          ctx.fillText('P'+(pi+1), memoX+9+ctx.measureText(lbl).width+5, lY+16);
+          ctx.strokeStyle='rgba(0,0,0,0.07)'; ctx.lineWidth=1;
+          ctx.beginPath(); ctx.moveTo(memoX+4, lY+HDR_H); ctx.lineTo(memoX+MEMO_W, lY+HDR_H); ctx.stroke();
+
+          // 내용
+          let cy = lY + HDR_H + 5;
+          ctx.save();
+          ctx.beginPath(); ctx.rect(memoX, lY, MEMO_W, cardH); ctx.clip();
+          for (const blk of blocks) {
+            if (blk.type==='text') {
+              if (blk.text==='\n') { cy+=LH; continue; }
+              if (!blk.text.trim()) continue;
+              let fnt=`${FS}px "Noto Sans KR",sans-serif`;
+              if (blk.bold&&blk.italic) fnt=`bold italic ${FS}px "Noto Sans KR",sans-serif`;
+              else if (blk.bold)   fnt=`bold ${FS}px "Noto Sans KR",sans-serif`;
+              else if (blk.italic) fnt=`italic ${FS}px "Noto Sans KR",sans-serif`;
+              ctx.font=fnt; ctx.fillStyle=blk.color||'#2a2418';
+              for (const line of wrapText(ctx, blk.text, INNER_W)) {
+                ctx.fillText(line, memoX+9, cy+FS);
+                if (blk.strike||blk.underline) {
+                  const tw=ctx.measureText(line).width;
+                  ctx.strokeStyle=blk.color||'#2a2418'; ctx.lineWidth=1;
+                  if (blk.strike)     { ctx.beginPath(); ctx.moveTo(memoX+9,cy+FS-4); ctx.lineTo(memoX+9+tw,cy+FS-4); ctx.stroke(); }
+                  if (blk.underline)  { ctx.beginPath(); ctx.moveTo(memoX+9,cy+FS+1); ctx.lineTo(memoX+9+tw,cy+FS+1); ctx.stroke(); }
+                }
+                cy+=LH;
+              }
+            } else if (blk.type==='img'&&blk.img) {
+              const nw=blk.img.naturalWidth||1, nh=blk.img.naturalHeight||1;
+              const iw=Math.min(INNER_W,nw), ih=Math.round((iw/nw)*nh);
+              ctx.drawImage(blk.img, memoX+9, cy, iw, ih); cy+=ih+8;
+            }
+          }
+          ctx.restore();
+        }
+      }
+
+      const dataUrl = cv.toDataURL('image/jpeg', 0.95);
+      const pageNum = String(pi + 1).padStart(3, '0');
+      const filename = ep.pages.length === 1 ? `${baseName}.jpg` : `${baseName}_${pageNum}.jpg`;
+      const a = document.createElement('a');
+      a.href = dataUrl; a.download = filename; a.click();
+      await new Promise(r => setTimeout(r, 300));
+    }
+
+    setP(100); setMsg('완료!');
+    await new Promise(r => setTimeout(r, 400));
+  } catch(err) {
+    alert('JPG 내보내기 오류: ' + err.message);
+    console.error(err);
+  }
+  hideOv();
+}
+
 // ══════════════════════════════════════════════════════════
 // PDF EXPORT
 // 전략: Canvas 2D API로 각 페이지를 직접 합성 →
@@ -2013,20 +2405,20 @@ document.addEventListener('keydown',e=>{
 // DRAWING ENGINE
 // ══════════════════════════════════════════════════════════
 const DS = {
-  mode:     false,      // 드로잉 모드 on/off
-  tool:     'pen',      // pen | eraser | line | rect | circle | arrow
-  color:    '#e03030',  // 현재 색상
-  size:     4,          // 브러시 크기 px
-  opacity:  1.0,        // 불투명도 0~1
-  // 페이지별 드로잉 데이터: { pageIdx: [{imageData}] } (undo 스택)
-  stacks:   {},         // undo 스택
-  redos:    {},         // redo 스택
-  // 현재 드래그 상태
+  mode:     false,
+  tool:     'pen',
+  color:    '#e03030',
+  size:     4,
+  opacity:  1.0,
+  stacks:   {},
+  redos:    {},
   drawing:  false,
   startX:   0, startY: 0,
   curPageIdx: -1,
-  // 임시 스냅샷 (도형 그릴 때 원본 보존)
   snapshot: null,
+  // 획 단위 지우개: 페이지별 획 목록
+  strokes:  {},
+  curStroke: null,
 };
 
 const DRAW_COLORS = [
@@ -2253,20 +2645,81 @@ function attachDrawEvents(cv, pageIdx){
     return {x:(src.clientX-r.left)*scaleX, y:(src.clientY-r.top)*scaleY};
   }
 
+  // 획 목록을 캔버스에 전부 다시 그림 (지우개로 획 삭제 후 재렌더용)
+  function redrawStrokes(){
+    const ctx=getDrawCtx(cv);
+    ctx.clearRect(0,0,cv.width,cv.height);
+    const list = DS.strokes[pageIdx] || [];
+    for(const s of list){
+      if(s.points.length < 2) continue;
+      ctx.save();
+      ctx.globalAlpha = s.opacity;
+      ctx.lineCap='round'; ctx.lineJoin='round';
+      if(s.tool==='pen'){
+        ctx.globalCompositeOperation='source-over';
+        ctx.strokeStyle=s.color; ctx.lineWidth=s.size;
+        ctx.beginPath(); ctx.moveTo(s.points[0].x, s.points[0].y);
+        for(let i=1;i<s.points.length;i++) ctx.lineTo(s.points[i].x, s.points[i].y);
+        ctx.stroke();
+      } else if(['line','rect','circle','arrow'].includes(s.tool)){
+        ctx.globalCompositeOperation='source-over';
+        ctx.strokeStyle=s.color; ctx.lineWidth=s.size;
+        const p0=s.points[0], p1=s.points[s.points.length-1];
+        drawShape(ctx, s.tool, p0.x, p0.y, p1.x, p1.y);
+      }
+      ctx.restore();
+    }
+  }
+
+  // 지우개: 클릭 지점과 가장 가까운 획을 찾아 삭제
+  function eraseStrokeAt(p){
+    const list = DS.strokes[pageIdx];
+    if(!list||!list.length) return false;
+    const THRESH = Math.max(DS.size * 2, 10);
+    // 뒤에서부터 탐색 (위에 그려진 획 우선)
+    for(let i=list.length-1; i>=0; i--){
+      const s = list[i];
+      for(const pt of s.points){
+        const dx=pt.x-p.x, dy=pt.y-p.y;
+        if(Math.sqrt(dx*dx+dy*dy) < THRESH){
+          pushUndo(cv, pageIdx);
+          list.splice(i,1);
+          DS.strokes[pageIdx] = list;
+          redrawStrokes();
+          saveDrawing(cv, pageIdx);
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   function onDown(e){
     if(!DS.mode)return;
     e.stopPropagation(); e.preventDefault();
     DS.drawing=true; DS.curPageIdx=pageIdx;
     const p=pos(e); DS.startX=p.x; DS.startY=p.y;
-    // undo 스택에 스냅샷 저장
+
+    if(DS.tool==='eraser'){
+      // 지우개: mousedown 시점에 바로 hit-test
+      eraseStrokeAt(p);
+      return;
+    }
+
     pushUndo(cv, pageIdx);
     const ctx=getDrawCtx(cv);
-    // 도형 도구: 스냅샷 저장
+
     if(['line','rect','circle','arrow'].includes(DS.tool)){
       DS.snapshot=ctx.getImageData(0,0,cv.width,cv.height);
     }
-    if(DS.tool==='pen'||DS.tool==='eraser'){
+    if(DS.tool==='pen'){
+      // 새 획 시작
+      if(!DS.strokes[pageIdx]) DS.strokes[pageIdx]=[];
+      DS.curStroke={ tool:'pen', color:DS.color, size:DS.size, opacity:DS.opacity, points:[p] };
       ctx.beginPath(); ctx.moveTo(p.x,p.y);
+    } else {
+      // 도형: 임시 획 시작
+      DS.curStroke={ tool:DS.tool, color:DS.color, size:DS.size, opacity:DS.opacity, points:[p, p] };
     }
   }
 
@@ -2275,24 +2728,25 @@ function attachDrawEvents(cv, pageIdx){
     e.preventDefault();
     const p=pos(e);
     const ctx=getDrawCtx(cv);
-    ctx.globalAlpha=DS.opacity;
 
+    if(DS.tool==='eraser'){
+      eraseStrokeAt(p);
+      return;
+    }
+
+    ctx.globalAlpha=DS.opacity;
     if(DS.tool==='pen'){
       ctx.globalCompositeOperation='source-over';
       ctx.strokeStyle=DS.color; ctx.lineWidth=DS.size;
       ctx.lineTo(p.x,p.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(p.x,p.y);
-    } else if(DS.tool==='eraser'){
-      ctx.globalCompositeOperation='destination-out';
-      ctx.lineWidth=DS.size*2;
-      ctx.lineTo(p.x,p.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(p.x,p.y);
-      ctx.globalCompositeOperation='source-over';
+      if(DS.curStroke) DS.curStroke.points.push(p);
     } else {
-      // 도형: 스냅샷 복원 후 미리보기
       ctx.putImageData(DS.snapshot,0,0);
       ctx.globalCompositeOperation='source-over';
       ctx.strokeStyle=DS.color; ctx.lineWidth=DS.size;
       ctx.globalAlpha=DS.opacity;
       drawShape(ctx, DS.tool, DS.startX, DS.startY, p.x, p.y);
+      if(DS.curStroke) DS.curStroke.points[1]=p;
     }
     ctx.globalAlpha=1;
   }
@@ -2300,6 +2754,8 @@ function attachDrawEvents(cv, pageIdx){
   function onUp(e){
     if(!DS.mode||!DS.drawing)return;
     DS.drawing=false;
+    if(DS.tool==='eraser'){ DS.curStroke=null; return; }
+
     const p=pos(e);
     const ctx=getDrawCtx(cv);
     ctx.globalAlpha=DS.opacity;
@@ -2308,10 +2764,18 @@ function attachDrawEvents(cv, pageIdx){
       ctx.globalCompositeOperation='source-over';
       ctx.strokeStyle=DS.color; ctx.lineWidth=DS.size;
       drawShape(ctx, DS.tool, DS.startX, DS.startY, p.x, p.y);
+      if(DS.curStroke) DS.curStroke.points[1]=p;
     }
     ctx.globalAlpha=1;
-    saveDrawing(cv, pageIdx);
+
+    // 완성된 획 저장
+    if(DS.curStroke && DS.curStroke.points.length >= 2){
+      if(!DS.strokes[pageIdx]) DS.strokes[pageIdx]=[];
+      DS.strokes[pageIdx].push(DS.curStroke);
+    }
+    DS.curStroke=null;
     DS.snapshot=null;
+    saveDrawing(cv, pageIdx);
   }
 
   cv.addEventListener('mousedown', onDown);
@@ -2366,7 +2830,10 @@ function restoreDrawing(cv, pageIdx){
 // ── Undo / Redo ──
 function pushUndo(cv, pageIdx){
   if(!DS.stacks[pageIdx]) DS.stacks[pageIdx]=[];
-  DS.stacks[pageIdx].push(cv.getContext('2d').getImageData(0,0,cv.width,cv.height));
+  DS.stacks[pageIdx].push({
+    img: cv.getContext('2d').getImageData(0,0,cv.width,cv.height),
+    strokes: JSON.parse(JSON.stringify(DS.strokes[pageIdx]||[]))
+  });
   if(DS.stacks[pageIdx].length>30) DS.stacks[pageIdx].shift();
   DS.redos[pageIdx]=[];
 }
@@ -2377,9 +2844,14 @@ function drawUndo(){
   const cv=getDrawCvByPage(pageIdx); if(!cv)return;
   const ctx=cv.getContext('2d');
   if(!DS.redos[pageIdx])DS.redos[pageIdx]=[];
-  DS.redos[pageIdx].push(ctx.getImageData(0,0,cv.width,cv.height));
+  // 현재 캔버스 상태를 redo에 저장
+  DS.redos[pageIdx].push({
+    img: ctx.getImageData(0,0,cv.width,cv.height),
+    strokes: JSON.parse(JSON.stringify(DS.strokes[pageIdx]||[]))
+  });
   const snap=stack.pop();
-  ctx.putImageData(snap,0,0);
+  ctx.putImageData(snap.img,0,0);
+  DS.strokes[pageIdx] = JSON.parse(JSON.stringify(snap.strokes||[]));
   saveDrawing(cv,pageIdx);
 }
 
@@ -2390,8 +2862,12 @@ function drawRedo(){
   const ctx=cv.getContext('2d');
   const snap=redo.pop();
   if(!DS.stacks[pageIdx])DS.stacks[pageIdx]=[];
-  DS.stacks[pageIdx].push(ctx.getImageData(0,0,cv.width,cv.height));
-  ctx.putImageData(snap,0,0);
+  DS.stacks[pageIdx].push({
+    img: ctx.getImageData(0,0,cv.width,cv.height),
+    strokes: JSON.parse(JSON.stringify(DS.strokes[pageIdx]||[]))
+  });
+  ctx.putImageData(snap.img,0,0);
+  DS.strokes[pageIdx] = JSON.parse(JSON.stringify(snap.strokes||[]));
   saveDrawing(cv,pageIdx);
 }
 
@@ -2429,9 +2905,14 @@ initDrawPalette();
 </script>
 <!-- 분할 안내 팝업 -->
 <div id="split-popup">
-  <div class="spt-title">PDF 내보내기를 할 때, 이미지 1장을 몇 분할할지 설정합니다</div>
+  <div class="spt-title">PDF 내보내기를 할 때, 이미지 1장을 몇 분할할지 설정합니다.</div>
   <hr class="spt-divider">
   <div class="spt-desc">이미지가 길수록 숫자를 높이세요.<br>낮으면 이미지가 잘려서 출력될 수 있습니다.</div>
   <table class="spt-table">
     <tr><td>1만px 이하</td><td>→</td><td>1분할</td></tr>
-    <tr><td>1만~2만px</td><td>→</td><td>2분할</t
+    <tr><td>1만~2만px</td><td>→</td><td>2분할</td></tr>
+    <tr><td>2만~3만px</td><td>→</td><td>3분할</td></tr>
+    <tr><td>3만px 이상</td><td>→</td><td>4+</td></tr>
+  </table>
+  <div class="spt-note">※ 이미지 원본 세로 픽셀 기준</div>
+</div>

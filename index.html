@@ -358,9 +358,9 @@ body.draw-active #chint{display:none !important;}
 <div id="topbar">
   <div class="logo">웹툰 메모<em> 스튜디오</em></div>
   <div class="sep"></div>
-  <button class="btn" onclick="openNewProjModal()">📁 새 작품</button>
+  <button class="btn" onclick="openNewProjModal()">📚 새 작품</button>
   <button class="btn" onclick="openNewEpModal()">＋ 새 회차</button>
-  <button class="btn" onclick="openBulkModal()">📦 일괄 불러오기</button>
+  <button class="btn" onclick="openBulkModal()">📁 일괄 불러오기</button>
   <div class="sep"></div>
   <div id="btn-draw-toggle">
     <button class="btn" id="draw-mode-btn" onclick="toggleDrawMode()" title="그리기 모드 켜기/끄기">
@@ -395,7 +395,7 @@ body.draw-active #chint{display:none !important;}
     </div>
     <div id="sb-foot">
       <button class="btn" style="justify-content:center" title="현재 작업을 JSON 파일로 백업 저장합니다" onclick="saveProject()">💾 백업 저장</button>
-      <button class="btn" style="justify-content:center" title="JSON 백업 파일을 불러옵니다" onclick="loadProject()">📥 백업 불러오기</button>
+      <button class="btn" style="justify-content:center" title="JSON 백업 파일을 불러옵니다" onclick="loadProject()">📁 백업 불러오기</button>
       <div style="margin-top:6px;padding:7px 8px;background:rgba(240,192,64,.07);border-radius:6px;border:1px solid rgba(240,192,64,.15);text-align:center;line-height:1.8;">
         <div style="font-size:10px;color:var(--ac);font-weight:600;">● 자동저장 활성화</div>
         <div style="font-size:10px;color:var(--t3);">주기적인 백업을 권장합니다</div>
@@ -442,7 +442,7 @@ body.draw-active #chint{display:none !important;}
 <div class="mbd" id="proj-modal">
   <div class="modal" style="width:360px">
     <button class="mx" onclick="cm('proj-modal')">×</button>
-    <h2>📁 새 작품 폴더</h2>
+    <h2>📚 새 작품 폴더</h2>
     <div class="fr"><label>작품 제목</label><input type="text" id="proj-title-in" placeholder="예: 나의 웹툰 작품"></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
       <button class="btn" onclick="cm('proj-modal')">취소</button>
@@ -519,7 +519,7 @@ body.draw-active #chint{display:none !important;}
 <div class="mbd" id="bulk-modal">
   <div class="modal" style="max-width:560px">
     <button class="mx" onclick="cm('bulk-modal')">×</button>
-    <h2>📦 일괄 불러오기</h2>
+    <h2>📁 일괄 불러오기</h2>
     <div class="fr">
       <label>추가할 작품 선택</label>
       <select id="bulk-proj"></select>

@@ -17,13 +17,13 @@
 body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx);height:100vh;display:flex;flex-direction:column;overflow:hidden;font-size:13px;}
 
 /* TOPBAR */
-#topbar{height:46px;background:var(--sf);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 14px;gap:6px;flex-shrink:0;}
-.logo{font-weight:700;font-size:15px;color:var(--ac);margin-right:10px;letter-spacing:-.5px;white-space:nowrap;}
+#topbar{height:46px;background:var(--sf);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 14px;gap:6px;flex-shrink:0;overflow:hidden;}
+.logo{font-weight:700;font-size:15px;color:var(--ac);margin-right:10px;letter-spacing:-.5px;white-space:nowrap;flex-shrink:0;}
 .logo em{color:var(--t2);font-weight:300;font-style:normal;}
 .sep{width:1px;height:20px;background:var(--bd);margin:0 4px;flex-shrink:0;}
-.gap{flex:1;}
-#ep-label{font-size:12px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;}
-.btn{display:inline-flex;align-items:center;gap:5px;background:var(--s3);border:1px solid var(--bd);color:var(--tx);padding:5px 11px;border-radius:5px;cursor:pointer;font-family:inherit;font-size:12px;white-space:nowrap;transition:border-color .15s,color .15s;}
+.gap{flex:1;min-width:0;}
+#ep-label{font-size:12px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px;flex-shrink:1;}
+.btn{display:inline-flex;align-items:center;gap:5px;background:var(--s3);border:1px solid var(--bd);color:var(--tx);padding:5px 11px;border-radius:5px;cursor:pointer;font-family:inherit;font-size:12px;white-space:nowrap;transition:border-color .15s,color .15s;flex-shrink:0;}
 .btn:hover{border-color:var(--ac);color:var(--ac);}
 .btn.pri{background:var(--ac);color:#1a1200;border-color:var(--ac);font-weight:700;}
 .btn.pri:hover{background:#ffd060;}
@@ -351,6 +351,43 @@ body.draw-active #chint{display:none !important;}
 }
 #save-indicator.show{opacity:1;transform:translateY(0);}
 #save-indicator::before{content:'●';color:#4caf50;font-size:8px;}
+
+/* ── HELP MODAL ── */
+#help-modal .modal{width:640px;padding:0;overflow:hidden;}
+#help-tabs{display:flex;border-bottom:1px solid var(--bd);background:var(--s2);flex-shrink:0;}
+.htab{flex:1;padding:10px 6px;font-size:11px;font-weight:600;color:var(--t3);background:none;border:none;cursor:pointer;letter-spacing:.3px;transition:color .15s,background .15s;border-bottom:2px solid transparent;margin-bottom:-1px;}
+.htab:hover{color:var(--tx);}
+.htab.on{color:var(--ac);border-bottom-color:var(--ac);}
+#help-body{padding:20px 22px 24px;overflow-y:auto;max-height:calc(84vh - 90px);}
+#help-body::-webkit-scrollbar{width:4px;}
+#help-body::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px;}
+.hp{font-size:12px;color:var(--t2);line-height:1.75;margin-bottom:10px;}
+.hsec{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--t3);margin:18px 0 8px;}
+.hsec:first-child{margin-top:0;}
+.hrow{display:flex;gap:10px;align-items:flex-start;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.hrow:last-child{border-bottom:none;}
+.hkey{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ac);background:rgba(240,192,64,.1);padding:2px 8px;border-radius:4px;border:1px solid rgba(240,192,64,.25);white-space:nowrap;flex-shrink:0;min-width:120px;text-align:center;margin-top:1px;}
+.hval{font-size:12px;color:var(--t2);line-height:1.6;}
+.htip{background:rgba(240,192,64,.07);border-left:3px solid var(--ac);border-radius:0 6px 6px 0;padding:8px 12px;font-size:11.5px;color:var(--t2);line-height:1.7;margin:10px 0;}
+.hwarn{background:rgba(224,80,80,.07);border-left:3px solid #e05050;border-radius:0 6px 6px 0;padding:8px 12px;font-size:11.5px;color:#c09090;line-height:1.7;margin:10px 0;}
+.hpanel{display:none;}
+.hpanel.on{display:block;}
+/* 기본 흐름 스텝 — 카드형 */
+.hsteps{display:flex;flex-direction:column;gap:0;margin:4px 0 12px;}
+.hstep{display:flex;gap:0;align-items:stretch;position:relative;}
+.hstep-left{display:flex;flex-direction:column;align-items:center;flex-shrink:0;width:38px;}
+.hstep-num{width:30px;height:30px;border-radius:50%;background:var(--ac);color:#1a1200;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 0 3px rgba(240,192,64,.18);z-index:1;}
+.hstep-line{flex:1;width:2px;background:rgba(240,192,64,.2);margin:2px 0;}
+.hstep:last-child .hstep-line{display:none;}
+.hstep-card{flex:1;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:10px 14px;margin:0 0 8px 6px;}
+.hstep-card b{color:var(--tx);font-size:12.5px;}
+.hstep-card span{display:block;font-size:11.5px;color:var(--t2);margin-top:3px;line-height:1.6;}
+.hstep-card .hstep-sub{font-size:11px;color:var(--t3);margin-top:4px;}
+.hbadge{display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;margin-right:4px;vertical-align:middle;}
+.hb-m{background:rgba(240,192,64,.2);color:#c09000;}
+.hb-f{background:rgba(224,112,80,.2);color:#c05030;}
+.hb-p{background:rgba(112,176,224,.2);color:#4080b0;}
+.hb-n{background:rgba(112,200,128,.2);color:#208040;}
 </style>
 </head>
 <body>
@@ -382,6 +419,8 @@ body.draw-active #chint{display:none !important;}
     <div class="export-item" onclick="closeExportMenu();exportPDF()">📄 PDF로 내보내기</div>
     <div class="export-item" onclick="closeExportMenu();exportJPG()">🖼️ JPG로 내보내기</div>
   </div>
+  <div class="sep"></div>
+  <button class="btn" onclick="om('help-modal')" title="도움말">❓ 도움말</button>
 </div>
 
 <div id="main">
@@ -662,6 +701,141 @@ body.draw-active #chint{display:none !important;}
         <line x1="6" y1="8" x2="6" y2="12"/><line x1="10" y1="8" x2="10" y2="12"/>
       </svg>
     </button>
+  </div>
+</div>
+
+<!-- HELP MODAL -->
+<div class="mbd" id="help-modal">
+  <div class="modal" style="width:640px;padding:0;overflow:hidden;">
+    <div style="display:flex;align-items:center;padding:14px 18px 0;gap:10px;">
+      <span style="font-size:15px;font-weight:700;color:var(--tx);">❓ 도움말</span>
+      <button class="mx" onclick="cm('help-modal')" style="margin-left:auto;margin-top:0;">×</button>
+    </div>
+    <div id="help-tabs">
+      <button class="htab on" onclick="showHTab(0)">🚀 시작하기</button>
+      <button class="htab" onclick="showHTab(1)">📝 메모 카드</button>
+      <button class="htab" onclick="showHTab(2)">🎨 그리기</button>
+      <button class="htab" onclick="showHTab(3)">⬇ 내보내기</button>
+      <button class="htab" onclick="showHTab(4)">💾 저장</button>
+      <button class="htab" onclick="showHTab(5)">⌨ 단축키</button>
+    </div>
+    <div id="help-body">
+
+      <!-- 0. 시작하기 -->
+      <div class="hpanel on" id="hp0">
+        <div class="hsec">프로그램 소개</div>
+        <p class="hp">웹툰 작가·편집자가 <b>원고 이미지에 컷별 메모를 달고 드로잉을 추가해 결과물을 PDF·JPG로 내보내는</b> 브라우저 기반 도구입니다. 작업 내용은 브라우저에 자동으로 저장됩니다.</p>
+
+        <div class="hsec">기본 흐름</div>
+        <div class="hsteps">
+          <div class="hstep">
+            <div class="hstep-left"><div class="hstep-num">1</div><div class="hstep-line"></div></div>
+            <div class="hstep-card">
+              <b>📁 새 작품 : 작품 폴더 만들기</b>
+              <span>상단 툴바의 <b>새 작품</b> 버튼을 클릭해 작품 제목을 입력합니다.</span>
+            </div>
+          </div>
+          <div class="hstep">
+            <div class="hstep-left"><div class="hstep-num">2</div><div class="hstep-line"></div></div>
+            <div class="hstep-card">
+              <b>＋ 새 회차 : 원고 이미지 불러오기</b>
+              <span><b>새 회차</b> 버튼을 클릭해 회차 번호를 입력하고, 원고 이미지(JPG/PNG)를 선택합니다.</span>
+              <div class="hstep-sub">파일명을 001.jpg, 002.jpg처럼 숫자 순서로 지정하면 원고가 올바른 순서로 배치됩니다.</div>
+            </div>
+          </div>
+          <div class="hstep">
+            <div class="hstep-left"><div class="hstep-num">3</div><div class="hstep-line"></div></div>
+            <div class="hstep-card">
+              <b>📝 메모·드로잉 추가</b>
+              <span>뷰어에 원고가 표시되면 이미지 위 원하는 위치를 클릭해 <b>메모 카드</b>를 추가합니다.<br>상단의 그리기 버튼으로 원고 위에 <b>드로잉</b>을 할 수 있습니다.</span>
+            </div>
+          </div>
+          <div class="hstep">
+            <div class="hstep-left"><div class="hstep-num">4</div><div class="hstep-line"></div></div>
+            <div class="hstep-card">
+              <b>⬇ 내보내기 : PDF 또는 JPG 저장</b>
+              <span>작업이 끝나면 우측 상단 <b>내보내기</b> 버튼으로 결과물을 저장합니다.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hsec">일괄 불러오기</div>
+        <p class="hp">여러 회차 이미지를 한 번에 가져올 때 사용합니다. 파일명 패턴(예: <code style="color:var(--ac)">{회차}화_{페이지}.jpg</code>)을 지정하면 회차를 자동으로 분류합니다.</p>
+
+        <div class="hsec">페이지 추가 · 삭제</div>
+        <div class="hrow"><span class="hkey">페이지 추가</span><span class="hval">사이드바에서 회차의 ✎ 버튼 → 이미지 추가.<br>파일명 순으로 자동 정렬되며, 메모·드로잉 위치도 재매핑됩니다.</span></div>
+        <div class="hrow"><span class="hkey">페이지 삭제</span><span class="hval">원고 이미지에 마우스를 올리면 좌상단에 🗑 버튼이 나타납니다.<br>클릭하면 해당 페이지와 그 페이지의 메모가 삭제됩니다.</span></div>
+        <div class="hwarn">삭제된 페이지와 메모는 복원할 수 없습니다. 삭제 전 백업을 권장합니다.</div>
+      </div>
+
+      <!-- 1. 메모 카드 -->
+      <div class="hpanel" id="hp1">
+        <div class="hsec">카드 편집</div>
+        <div class="hrow"><span class="hkey">드래그</span><span class="hval">카드 위치 이동. 다른 페이지로 이동하면 페이지 번호가 자동 변경됩니다.</span></div>
+        <div class="hrow"><span class="hkey">B / I / U / S</span><span class="hval">굵게 / 기울임 / 밑줄 / 취소선</span></div>
+        <div class="hrow"><span class="hkey">색상</span><span class="hval">글자색 변경</span></div>
+        <div class="hrow"><span class="hkey">🖼</span><span class="hval">이미지 첨부. Ctrl+V 붙여넣기도 가능</span></div>
+        <div class="hrow"><span class="hkey">×</span><span class="hval">카드 삭제 (복원 불가)</span></div>
+      </div>
+
+      <!-- 2. 드로잉 -->
+      <div class="hpanel" id="hp2">
+        <div class="hsec">모드 전환</div>
+        <p class="hp">상단의 <b>🎨 그리기</b> 버튼으로 드로잉 모드를 켜고 끕니다. 켜진 동안에는 메모 추가 클릭이 비활성화됩니다.</p>
+
+        <div class="hsec">도구</div>
+        <div class="hrow"><span class="hkey">펜</span><span class="hval">자유 그리기</span></div>
+        <div class="hrow"><span class="hkey">지우개</span><span class="hval">획 단위로 지움</span></div>
+        <div class="hrow"><span class="hkey">직선 / 사각형 / 원 / 화살표</span><span class="hval">도형 그리기</span></div>
+
+        <div class="hsec">실행취소 / 초기화</div>
+        <div class="hrow"><span class="hkey">↩ 실행취소</span><span class="hval">Ctrl+Z</span></div>
+        <div class="hrow"><span class="hkey">↪ 다시실행</span><span class="hval">Ctrl+Y</span></div>
+        <div class="hrow"><span class="hkey">🗑 페이지 지우기</span><span class="hval">현재 페이지 드로잉 전체 삭제</span></div>
+        <div class="htip">툴바 상단의 점 세 개를 드래그하면 툴바를 원하는 위치로 옮길 수 있습니다.</div>
+      </div>
+
+      <!-- 3. 내보내기 -->
+      <div class="hpanel" id="hp3">
+        <div class="hsec">PDF 내보내기</div>
+        <p class="hp"><b>분할 수</b>: 웹툰 원고는 세로가 길어 한 이미지를 여러 PDF 페이지로 나누어 저장합니다. 툴바의 − / ＋ 버튼으로 분할 수를 조절합니다.</p>
+        <div class="hrow"><span class="hkey">1만px 이하</span><span class="hval">1분할 권장</span></div>
+        <div class="hrow"><span class="hkey">1~2만px</span><span class="hval">2분할 권장</span></div>
+        <div class="hrow"><span class="hkey">2~3만px</span><span class="hval">3분할 권장</span></div>
+        <div class="hrow"><span class="hkey">3만px 이상</span><span class="hval">4분할 이상</span></div>
+
+        <div class="hsec">JPG 내보내기</div>
+        <p class="hp">메모가 있는 페이지는 오른쪽에 메모 컬럼이 추가되고, 메모가 없는 페이지는 원본 해상도 그대로 저장됩니다.</p>
+        <div class="hwarn">PDF 내보내기는 최초 1회 인터넷에서 라이브러리를 다운로드합니다. 오프라인에서는 JPG 내보내기를 사용하세요.</div>
+      </div>
+
+      <!-- 4. 저장 -->
+      <div class="hpanel" id="hp4">
+        <div class="hsec">자동저장</div>
+        <p class="hp">작업 내용은 브라우저(IndexedDB)에 자동 저장됩니다. 우측 하단에 <b>자동저장됨</b> 표시가 나타나면 저장 완료! 브라우저를 닫았다 다시 열어도 복원됩니다.</p>
+        <div class="hwarn">자동저장은 이 브라우저에만 저장됩니다. 다른 기기·다른 브라우저에서는 복원되지 않습니다.</div>
+
+        <div class="hsec">백업 저장 / 불러오기</div>
+        <div class="hrow"><span class="hkey">💾 백업 저장</span><span class="hval">전체 작업(이미지 포함)을 JSON 파일로 저장합니다. 정기적으로 백업하는 것을 권장합니다.</span></div>
+        <div class="hrow"><span class="hkey">📁 백업 불러오기</span><span class="hval">저장된 JSON을 불러와 복원합니다. 현재 작업이 교체되므로, 불러오기 전 백업을 먼저 저장하세요.</span></div>
+        <div class="htip">브라우저 캐시를 지우면 자동저장 데이터가 삭제될 수 있습니다. 중요한 작업은 반드시 백업 저장을 사용하세요.</div>
+      </div>
+
+      <!-- 5. 단축키 -->
+      <div class="hpanel" id="hp5">
+        <div class="hsec">뷰어</div>
+        <div class="hrow"><span class="hkey">+ / =</span><span class="hval">원고 확대 (+10%)</span></div>
+        <div class="hrow"><span class="hkey">-</span><span class="hval">원고 축소 (−10%)</span></div>
+        <div class="hrow"><span class="hkey">0</span><span class="hval">줌 100% 초기화</span></div>
+        <div class="hrow"><span class="hkey">Esc</span><span class="hval">메모 유형 팝업 닫기</span></div>
+
+        <div class="hsec">드로잉</div>
+        <div class="hrow"><span class="hkey">Ctrl + Z</span><span class="hval">실행 취소</span></div>
+        <div class="hrow"><span class="hkey">Ctrl + Y</span><span class="hval">다시 실행</span></div>
+        <div class="hrow"><span class="hkey">Ctrl + Shift + Z</span><span class="hval">다시 실행 (대체)</span></div>
+      </div>
+
+    </div><!-- /help-body -->
   </div>
 </div>
 
@@ -2923,6 +3097,12 @@ function getDrawCvByPage(pageIdx){
 
 // 회차 선택 시 드로잉 툴바/버튼 표시 (selEp 훅 제거 — 원본 함수에 직접 추가됨)
 
+// ── 도움말 탭 전환 ──
+function showHTab(idx){
+  document.querySelectorAll('.hpanel').forEach((p,i)=>p.classList.toggle('on',i===idx));
+  document.querySelectorAll('.htab').forEach((t,i)=>t.classList.toggle('on',i===idx));
+}
+
 // 초기화
 initDrawPalette();
 
@@ -2941,4 +3121,9 @@ initDrawPalette();
   <div class="spt-desc">이미지가 길수록 숫자를 높이세요.<br>낮으면 이미지가 잘려서 출력될 수 있습니다.</div>
   <table class="spt-table">
     <tr><td>1만px 이하</td><td>→</td><td>1분할</td></tr>
-    <tr><td>1만~2만px</
+    <tr><td>1만~2만px</td><td>→</td><td>2분할</td></tr>
+    <tr><td>2만~3만px</td><td>→</td><td>3분할</td></tr>
+    <tr><td>3만px 이상</td><td>→</td><td>4+</td></tr>
+  </table>
+  <div class="spt-note">※ 이미지 원본 세로 픽셀 기준</div>
+</div>

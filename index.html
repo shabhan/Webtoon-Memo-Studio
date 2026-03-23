@@ -1246,7 +1246,7 @@ function openNewEpModal() {
   // Populate project selector
   const sel = document.getElementById('nep-proj');
   sel.innerHTML = S.projs.map(p=>`<option value="${p.id}" ${p.id===S.curProjId?'selected':''}>${esc(p.title)}</option>`).join('');
-  if(!S.projs.length) { alert('먼저 작품 폴더를 만들어주세요.'); return; }
+  if(!S.projs.length) { alert('먼저 작품 폴더를 만들어주세요. (📁 새 작품)'); return; }
 
   const proj = S.projs.find(p=>p.id===S.curProjId) || S.projs[0];
   document.getElementById('nep-num').value = proj.eps.length+1;
@@ -1757,7 +1757,7 @@ function bdzd(e){e.preventDefault();document.getElementById('bdz').classList.rem
 // BULK
 // ══════════════════════════════════════════════════════════
 function openBulkModal(){
-  if(!S.projs.length){alert('먼저 작품 폴더를 만들어주세요.');return;}
+  if(!S.projs.length){alert('먼저 작품 폴더를 만들어주세요.(📁 새 작품)');return;}
   S.pbg={};
   S._lastBulkFiles = null;  // 누적 파일 초기화
   document.getElementById('bprev').innerHTML='';

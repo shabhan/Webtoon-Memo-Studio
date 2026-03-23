@@ -415,9 +415,12 @@ body.draw-active #chint{display:none !important;}
     <button class="btn" id="split-inc" onclick="changeSplit(1)" style="padding:4px 8px;font-size:14px;line-height:1;">＋</button>
   </div>
   <button class="btn pri" id="btn-export" style="display:none" onclick="toggleExportMenu(event)">⬇ 내보내기 ▾</button>
-  <div id="export-menu" style="display:none;position:fixed;background:var(--sf);border:1px solid var(--bd);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:300;min-width:160px;overflow:hidden;">
+  <div id="export-menu" style="display:none;position:fixed;background:var(--sf);border:1px solid var(--bd);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:300;min-width:180px;overflow:hidden;">
     <div class="export-item" onclick="closeExportMenu();exportPDF()">📄 PDF로 내보내기</div>
     <div class="export-item" onclick="closeExportMenu();exportJPG()">🖼️ JPG로 내보내기</div>
+    <div style="padding:6px 16px 8px;font-size:10px;color:var(--t3);border-top:1px solid var(--bd);line-height:1.6;">
+      💡 JPG 여러 장은 ZIP으로 묶어 저장됩니다
+    </div>
   </div>
   <div class="sep"></div>
   <button class="btn" onclick="om('help-modal')" title="도움말">❓ 도움말</button>
@@ -859,7 +862,7 @@ body.draw-active #chint{display:none !important;}
   <div class="pw"><div class="pb" id="expb" style="width:0%"></div></div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ══════════════════════════════════════════════════════════
 // INDEXED DB AUTO-SAVE
 // ══════════════════════════════════════════════════════════
@@ -2028,6 +2031,62 @@ function closeExportMenu() {
 }
 document.addEventListener('click', () => closeExportMenu());
 
+// ── 저장 위치 선택 헬퍼 ──
+// File System Access API 지원 여부 확인
+function fsSaveSupported() {
+  return typeof window.showSaveFilePicker === 'function';
+}
+// 단일 파일 저장 (PDF용)
+async function saveFileWithPicker(blob, suggestedName, mimeType, extDesc) {
+  if (fsSaveSupported()) {
+    try {
+      const ext = suggestedName.split('.').pop();
+      const handle = await window.showSaveFilePicker({
+        suggestedName,
+        types: [{ description: extDesc, accept: { [mimeType]: ['.' + ext] } }],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      return true;
+    } catch (e) {
+      if (e.name === 'AbortError') return false; // 사용자가 취소
+      throw e;
+    }
+  } else {
+    // 폴백: 기존 방식
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = suggestedName; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+    return true;
+  }
+}
+
+// JSZip 로드 (JPG 여러 장 ZIP 저장용)
+async function loadJSZip() {
+  const src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+  if (window.JSZip) return;
+  await new Promise((res, rej) => {
+    if (document.querySelector(`script[src="${src}"]`)) { res(); return; }
+    const s = document.createElement('script');
+    s.src = src; s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+
+// 여러 JPG를 ZIP으로 묶어 저장 / 1장이면 단독 저장
+async function saveJpgFiles(files, zipName) {
+  if (files.length === 1) {
+    return saveFileWithPicker(files[0].blob, files[0].name, 'image/jpeg', 'JPEG 이미지');
+  }
+  await loadJSZip();
+  const zip = new window.JSZip();
+  for (const { name, blob } of files) zip.file(name, blob);
+  const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
+  return saveFileWithPicker(zipBlob, zipName, 'application/zip', 'ZIP 압축 파일');
+}
+
 // ── JPG 내보내기 (이미지 + 드로잉 + 메모 오버레이) ──
 async function exportJPG() {
   const ep = curEp();
@@ -2068,6 +2127,8 @@ async function exportJPG() {
     msrCv.width = INNER_W + 40; msrCv.height = 4;
     const mx = msrCv.getContext('2d');
     mx.font = `${FS}px "Noto Sans KR",sans-serif`;
+
+    const jpgFiles = []; // 저장할 파일 목록
 
     for (let pi = 0; pi < ep.pages.length; pi++) {
       setMsg(`JPG 생성 중... ${pi + 1}/${ep.pages.length}`);
@@ -2190,13 +2251,25 @@ async function exportJPG() {
       const dataUrl = cv.toDataURL('image/jpeg', 0.95);
       const pageNum = String(pi + 1).padStart(3, '0');
       const filename = ep.pages.length === 1 ? `${baseName}.jpg` : `${baseName}_${pageNum}.jpg`;
-      const a = document.createElement('a');
-      a.href = dataUrl; a.download = filename; a.click();
-      await new Promise(r => setTimeout(r, 300));
+      const fetchRes = await fetch(dataUrl);
+      const blob = await fetchRes.blob();
+      jpgFiles.push({ name: filename, blob });
     }
 
-    setP(100); setMsg('완료!');
-    await new Promise(r => setTimeout(r, 400));
+    setP(97); setMsg('저장 위치 선택 중...');
+    hideOv();
+
+    const saved = await saveJpgFiles(jpgFiles, `${baseName}.zip`);
+    if (saved) {
+      const indicator = document.getElementById('save-indicator');
+      if (indicator) {
+        const orig = indicator.textContent;
+        indicator.textContent = `✅ JPG ${jpgFiles.length}장 저장 완료`;
+        indicator.classList.add('show');
+        setTimeout(() => { indicator.classList.remove('show'); indicator.textContent = orig; }, 3000);
+      }
+    }
+
   } catch(err) {
     alert('JPG 내보내기 오류: ' + err.message);
     console.error(err);
@@ -2481,11 +2554,26 @@ async function exportPDF() {
       }
     }
 
-    setP(96); setMsg('PDF 저장 중...');
+    setP(96); setMsg('PDF 저장 위치 선택 중...');
     await new Promise(r=>setTimeout(r,150));
     const proj = S.projs.find(p => p.eps.some(e => e.id === S.curEpId));
     const projTitle = proj ? proj.title + '_' : '';
-    doc.save(`${projTitle}${ep.num}화${ep.title ? '_'+ep.title : ''}.pdf`);
+    const pdfName = `${projTitle}${ep.num}화${ep.title ? '_'+ep.title : ''}.pdf`;
+
+    // PDF Blob 생성
+    const pdfBlob = doc.output('blob');
+    hideOv();
+
+    const saved = await saveFileWithPicker(pdfBlob, pdfName, 'application/pdf', 'PDF 문서');
+    if (saved) {
+      const indicator = document.getElementById('save-indicator');
+      if (indicator) {
+        const orig = indicator.textContent;
+        indicator.textContent = `✅ PDF 저장 완료`;
+        indicator.classList.add('show');
+        setTimeout(() => { indicator.classList.remove('show'); indicator.textContent = orig; }, 3000);
+      }
+    }
 
   } catch(err) {
     alert('PDF 생성 오류: '+err.message);

@@ -440,13 +440,14 @@ body.draw-active #chint{display:none !important;}
     <div id="sb-foot">
       <button class="btn" style="justify-content:center" title="현재 작업을 JSON 파일로 백업 저장합니다" onclick="saveProject()">💾 백업 저장</button>
       <button class="btn" style="justify-content:center" title="JSON 백업 파일을 불러옵니다" onclick="loadProject()">🔃 백업 불러오기</button>
+      <button class="btn" style="justify-content:center" onclick="openSettingsModal()">⚙️ 설정</button>
       <div style="margin-top:6px;padding:7px 8px;background:rgba(240,192,64,.07);border-radius:6px;border:1px solid rgba(240,192,64,.15);text-align:center;line-height:1.8;">
         <div style="font-size:10px;color:var(--ac);font-weight:600;">● 자동저장 활성화</div>
         <div style="font-size:10px;color:var(--t3);">정기적인 백업을 권장합니다.</div>
       </div>
       <div style="margin-top:4px;padding-top:8px;border-top:1px solid var(--bd);text-align:center;line-height:1.7;">
         <div style="font-size:10px;color:var(--t3);">Made by <span style="color:var(--t2);font-weight:600;">샤반</span></div>
-        <a href="mailto:shabhan.apr@gmail.com" style="font-size:10px;color:var(--t3);text-decoration:none;transition:color .15s;" onmouseover="this.style.color='var(--ac)'" onmouseout="this.style.color='var(--t3)'">shabhan.apr@gmail.com</a>
+        <a href="/cdn-cgi/l/email-protection#a8dbc0c9cac0c9c686c9d8dae8cfc5c9c1c486cbc7c5" style="font-size:10px;color:var(--t3);text-decoration:none;transition:color .15s;" onmouseover="this.style.color='var(--ac)'" onmouseout="this.style.color='var(--t3)'"><span class="__cf_email__" data-cfemail="12617a73707a737c3c73626052757f737b7e3c717d7f">[email&#160;protected]</span></a>
       </div>
     </div>
   </div>
@@ -718,10 +719,10 @@ body.draw-active #chint{display:none !important;}
     </div>
     <div id="help-tabs">
       <button class="htab on" onclick="showHTab(0)">🚀 시작하기</button>
-      <button class="htab" onclick="showHTab(1)">📝 메모 카드</button>
-      <button class="htab" onclick="showHTab(2)">🎨 그리기</button>
-      <button class="htab" onclick="showHTab(3)">⬇ 내보내기</button>
-      <button class="htab" onclick="showHTab(4)">💾 저장</button>
+      <button class="htab" onclick="showHTab(1)">🎨 메모·그리기</button>
+      <button class="htab" onclick="showHTab(2)">⬇ 내보내기</button>
+      <button class="htab" onclick="showHTab(3)">💾 저장</button>
+      <button class="htab" onclick="showHTab(4)">⚙️ 설정</button>
       <button class="htab" onclick="showHTab(5)">⌨ 단축키</button>
     </div>
     <div id="help-body">
@@ -773,22 +774,18 @@ body.draw-active #chint{display:none !important;}
         <div class="hwarn">삭제된 페이지와 메모는 복원할 수 없습니다. 삭제 전 백업을 권장합니다.</div>
       </div>
 
-      <!-- 1. 메모 카드 -->
+      <!-- 1. 메모·그리기 (통합) -->
       <div class="hpanel" id="hp1">
-        <div class="hsec">카드 편집</div>
-        <div class="hrow"><span class="hkey">드래그</span><span class="hval">카드 위치 이동. 다른 페이지로 이동하면 페이지 번호가 자동 변경됩니다.</span></div>
+        <div class="hsec">메모 카드</div>
+        <p class="hp">원고 이미지 위 원하는 위치를 클릭하면 메모 유형을 선택할 수 있습니다. 카드는 <b>일반 메모 / 피드백 / 복선·떡밥 / 아이디어</b> 네 가지 유형으로 구분됩니다.</p>
+        <div class="hrow"><span class="hkey">드래그</span><span class="hval">카드 머리를 드래그해 위치를 이동합니다. 다른 페이지 위치로 옮기면 페이지 번호가 자동 변경됩니다.</span></div>
         <div class="hrow"><span class="hkey">B / I / U / S</span><span class="hval">굵게 / 기울임 / 밑줄 / 취소선</span></div>
         <div class="hrow"><span class="hkey">색상</span><span class="hval">글자색 변경</span></div>
         <div class="hrow"><span class="hkey">🖼</span><span class="hval">이미지 첨부. Ctrl+V 붙여넣기도 가능</span></div>
         <div class="hrow"><span class="hkey">×</span><span class="hval">카드 삭제 (복원 불가)</span></div>
-      </div>
 
-      <!-- 2. 드로잉 -->
-      <div class="hpanel" id="hp2">
-        <div class="hsec">모드 전환</div>
+        <div class="hsec">그리기</div>
         <p class="hp">상단의 <b>🎨 그리기</b> 버튼으로 드로잉 모드를 켜고 끕니다. 켜진 동안에는 메모 추가 클릭이 비활성화됩니다.</p>
-
-        <div class="hsec">도구</div>
         <div class="hrow"><span class="hkey">펜</span><span class="hval">자유 그리기</span></div>
         <div class="hrow"><span class="hkey">지우개</span><span class="hval">획 단위로 지움</span></div>
         <div class="hrow"><span class="hkey">직선 / 사각형 / 원 / 화살표</span><span class="hval">도형 그리기</span></div>
@@ -800,8 +797,8 @@ body.draw-active #chint{display:none !important;}
         <div class="htip">툴바 상단의 점 세 개를 드래그하면 툴바를 원하는 위치로 옮길 수 있습니다.</div>
       </div>
 
-      <!-- 3. 내보내기 -->
-      <div class="hpanel" id="hp3">
+      <!-- 2. 내보내기 -->
+      <div class="hpanel" id="hp2">
         <div class="hsec">PDF 내보내기</div>
         <p class="hp"><b>분할 수</b>: 웹툰 원고는 세로가 길어 한 이미지를 여러 PDF 페이지로 나누어 저장합니다. 툴바의 − / ＋ 버튼으로 분할 수를 조절합니다.</p>
         <div class="hrow"><span class="hkey">1만px 이하</span><span class="hval">1분할 권장</span></div>
@@ -814,8 +811,8 @@ body.draw-active #chint{display:none !important;}
         <div class="hwarn">PDF 내보내기는 최초 1회 인터넷에서 라이브러리를 다운로드합니다. 오프라인에서는 JPG 내보내기를 사용하세요.</div>
       </div>
 
-      <!-- 4. 저장 -->
-      <div class="hpanel" id="hp4">
+      <!-- 3. 저장 -->
+      <div class="hpanel" id="hp3">
         <div class="hsec">자동저장</div>
         <p class="hp">작업 내용은 브라우저(IndexedDB)에 자동 저장됩니다. 우측 하단에 <b>자동저장됨</b> 표시가 나타나면 저장 완료! 브라우저를 닫았다 다시 열어도 복원됩니다.</p>
         <div class="htip">자동저장은 이 브라우저에만 저장됩니다. 다른 기기·다른 브라우저에서는 백업 불러오기를 사용하세요.</div>
@@ -824,6 +821,23 @@ body.draw-active #chint{display:none !important;}
         <div class="hrow"><span class="hkey">💾 백업 저장</span><span class="hval">전체 작업(이미지 포함)을 JSON 파일로 저장합니다. 정기적으로 백업하는 것을 권장합니다.</span></div>
         <div class="hrow"><span class="hkey">🔃 백업 불러오기</span><span class="hval">저장된 JSON을 불러와 복원합니다. 현재 작업이 교체되므로, 불러오기 전 백업을 먼저 저장하세요.</span></div>
         <div class="hwarn">브라우저 캐시를 지우면 자동저장 데이터가 삭제될 수 있습니다. 중요한 작업은 반드시 백업 저장을 해주세요.</div>
+      </div>
+
+      <!-- 4. 설정 -->
+      <div class="hpanel" id="hp4">
+        <div class="hsec">이미지 자동 압축</div>
+        <p class="hp">원고를 업로드할 때 PNG·JPG를 자동으로 압축해 브라우저 메모리 사용을 줄여줍니다. 사이드바 하단 <b>⚙️ 설정</b>에서 켜고 끌 수 있습니다.</p>
+
+        <div class="hsec">압축 설정 항목</div>
+        <div class="hrow"><span class="hkey">자동 압축 ON / OFF</span><span class="hval">기본값은 ON입니다. 원본 품질이 필요한 경우 OFF로 전환하세요.</span></div>
+        <div class="hrow"><span class="hkey">최대 가로 해상도</span><span class="hval">업로드 이미지의 가로 픽셀이 이 값을 초과하면 비율을 유지하며 축소합니다. 기본값 1200px.</span></div>
+        <div class="hrow"><span class="hkey">JPEG 압축 품질</span><span class="hval">숫자가 낮을수록 용량이 작아지지만 화질도 함께 낮아집니다.</span></div>
+
+        <div class="hsec">화질 vs 용량</div>
+        <div class="hrow"><span class="hkey">60% 이하</span><span class="hval">용량 대폭 감소. 텍스트, 선화 주변에 약간의 뭉개짐과 열화가 발생합니다.</span></div>
+        <div class="hrow"><span class="hkey">70~80%</span><span class="hval">열람·검토용으로 충분한 수준. 선이 많은 원고는 미세한 뭉개짐이 있을 수 있습니다.</span></div>
+        <div class="hrow"><span class="hkey">82%</span><span class="hval">(기본값) 육안으로 원본과 거의 구분이 어려운 수준. PNG 원고 기준 보통 70~85%의 용량이 감소됩니다.</span></div>
+        <div class="hrow"><span class="hkey">90~95%</span><span class="hval">화질은 원본과 거의 동일한 수준. 용량 절감 효과는 상대적으로 적습니다.</span></div>
       </div>
 
       <!-- 5. 단축키 -->
@@ -841,6 +855,73 @@ body.draw-active #chint{display:none !important;}
       </div>
 
     </div><!-- /help-body -->
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="mbd" id="settings-modal">
+  <div class="modal" style="width:400px">
+    <button class="mx" onclick="cm('settings-modal')">×</button>
+    <h2>⚙️ 설정</h2>
+
+    <!-- 이미지 압축 토글 -->
+    <div style="border:1px solid var(--bd);border-radius:8px;padding:14px 16px;margin-bottom:14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--tx);">🗜️ 이미지 자동 압축</div>
+          <div style="font-size:11px;color:var(--t2);margin-top:3px;line-height:1.6;">업로드 시 PNG·JPG를 자동으로 압축합니다.<br>원고 용량이 크면 켜두는 것을 권장합니다.</div>
+        </div>
+        <!-- 토글 스위치 -->
+        <label id="compress-toggle-wrap" style="position:relative;width:46px;height:26px;flex-shrink:0;cursor:pointer;margin-left:14px;">
+          <input type="checkbox" id="compress-toggle" style="opacity:0;width:0;height:0;position:absolute;"
+            onchange="onCompressToggle(this.checked)">
+          <span id="compress-slider" style="
+            position:absolute;inset:0;border-radius:13px;transition:background .2s;
+            background:var(--s3);border:1px solid var(--bd);">
+            <span style="
+              position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;
+              background:var(--t3);transition:transform .2s,background .2s;
+              display:block;" id="compress-knob"></span>
+          </span>
+        </label>
+      </div>
+
+      <!-- 압축 세부 설정 (압축 ON일 때만 활성) -->
+      <div id="compress-options" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--bd);">
+        <div class="fr" style="margin-bottom:10px;">
+          <label style="display:flex;justify-content:space-between;align-items:center;">
+            <span>최대 가로 해상도</span>
+            <span id="compress-maxw-val" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ac);"></span>
+          </label>
+          <input type="range" id="compress-maxw" min="600" max="2400" step="100"
+            oninput="onCompressMaxW(this.value)"
+            style="width:100%;accent-color:var(--ac);margin-top:6px;cursor:pointer;">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-top:3px;">
+            <span>600px</span><span>1200px</span><span>2400px</span>
+          </div>
+        </div>
+        <div class="fr" style="margin-bottom:0;">
+          <label style="display:flex;justify-content:space-between;align-items:center;">
+            <span>JPEG 압축 품질</span>
+            <span id="compress-quality-val" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ac);"></span>
+          </label>
+          <input type="range" id="compress-quality" min="50" max="100" step="1"
+            oninput="onCompressQuality(this.value)"
+            style="width:100%;accent-color:var(--ac);margin-top:6px;cursor:pointer;">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-top:3px;">
+            <span>낮음(50)</span><span>권장(82)</span><span>최고(100)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:rgba(240,192,64,.07);border-left:3px solid var(--ac);border-radius:0 6px 6px 0;padding:8px 12px;font-size:11px;color:var(--t2);line-height:1.7;margin-bottom:16px;">
+      💡 압축은 <b>새로 업로드하는 이미지</b>에만 적용됩니다. 이미 불러온 원고에는 영향을 주지 않습니다.
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;">
+      <button class="btn pri" onclick="cm('settings-modal')">닫기</button>
+    </div>
   </div>
 </div>
 
@@ -864,7 +945,7 @@ body.draw-active #chint{display:none !important;}
   <div class="pw"><div class="pb" id="expb" style="width:0%"></div></div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ══════════════════════════════════════════════════════════
 // INDEXED DB AUTO-SAVE
 // ══════════════════════════════════════════════════════════
@@ -938,6 +1019,9 @@ async function autoSave() {
     curProjId: S.curProjId,
     curEpId:   S.curEpId,
     nChunks:   S.nChunks,
+    compressImages:  S.compressImages,
+    compressMaxW:    S.compressMaxW,
+    compressQuality: S.compressQuality,
     projs: S.projs.map(p => ({
       id: p.id, title: p.title, open: p.open,
       eps: p.eps.map(e => ({
@@ -963,6 +1047,9 @@ async function loadAutoSave() {
     S.curProjId = data.curProjId || null;
     S.curEpId   = data.curEpId   || null;
     S.nChunks   = data.nChunks   || 1;
+    if (data.compressImages  !== undefined) S.compressImages  = data.compressImages;
+    if (data.compressMaxW    !== undefined) S.compressMaxW    = data.compressMaxW;
+    if (data.compressQuality !== undefined) S.compressQuality = data.compressQuality;
     document.getElementById('split-val').textContent = S.nChunks;
     renderTree();
     // 마지막으로 열린 회차 복원
@@ -1030,6 +1117,9 @@ const S = {
   pRatioY: null,
   pPageIdx: null,
   nChunks: 1,   // PDF 내보내기 시 이미지 1장당 분할 수
+  compressImages: true,   // 업로드 이미지 자동 압축 여부
+  compressMaxW: 1200,     // 압축 최대 가로px
+  compressQuality: 0.82,  // JPEG 압축 품질 (0~1)
 };
 
 const uid = () => Math.random().toString(36).slice(2,9);
@@ -1754,7 +1844,33 @@ function applyZ(){
 // FILE HELPERS
 // ══════════════════════════════════════════════════════════
 function f2url(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsDataURL(f);});}
-async function files2pages(files){const p=[];for(const f of files)p.push({name:f.name,url:await f2url(f)});return p;}
+
+// 이미지 파일을 Canvas로 압축하여 DataURL 반환
+// compressImages 설정이 꺼져있거나 PNG/JPG 외 포맷이면 원본 반환
+async function compressToDataURL(file) {
+  if (!S.compressImages) return f2url(file);
+  const isImg = /\.(jpe?g|png)$/i.test(file.name) || file.type === 'image/jpeg' || file.type === 'image/png';
+  if (!isImg) return f2url(file);
+  return new Promise((res, rej) => {
+    const rawUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const maxW = S.compressMaxW;
+      let w = img.naturalWidth, h = img.naturalHeight;
+      // 최대 가로 폭을 초과할 때만 축소
+      if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+      const cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      cv.getContext('2d').drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(rawUrl);
+      res(cv.toDataURL('image/jpeg', S.compressQuality));
+    };
+    img.onerror = () => { URL.revokeObjectURL(rawUrl); f2url(file).then(res).catch(rej); };
+    img.src = rawUrl;
+  });
+}
+
+async function files2pages(files){const p=[];for(const f of files)p.push({name:f.name,url:await compressToDataURL(f)});return p;}
 
 // ══════════════════════════════════════════════════════════
 // DZ
@@ -3202,6 +3318,54 @@ function showHTab(idx){
   document.querySelectorAll('.htab').forEach((t,i)=>t.classList.toggle('on',i===idx));
 }
 
+// ══════════════════════════════════════════════════════════
+// SETTINGS MODAL
+// ══════════════════════════════════════════════════════════
+function openSettingsModal() {
+  // 현재 S 상태를 모달 UI에 반영
+  const tog = document.getElementById('compress-toggle');
+  tog.checked = S.compressImages;
+  _applyCompressToggleUI(S.compressImages);
+
+  document.getElementById('compress-maxw').value = S.compressMaxW;
+  document.getElementById('compress-maxw-val').textContent = S.compressMaxW + 'px';
+
+  document.getElementById('compress-quality').value = Math.round(S.compressQuality * 100);
+  document.getElementById('compress-quality-val').textContent = Math.round(S.compressQuality * 100) + '%';
+
+  om('settings-modal');
+}
+
+function _applyCompressToggleUI(on) {
+  const knob    = document.getElementById('compress-knob');
+  const slider  = document.getElementById('compress-slider');
+  const options = document.getElementById('compress-options');
+  if (knob)    knob.style.transform    = on ? 'translateX(20px)' : 'translateX(0)';
+  if (knob)    knob.style.background   = on ? 'var(--ac)'        : 'var(--t3)';
+  if (slider)  slider.style.background = on ? 'rgba(240,192,64,.35)' : 'var(--s3)';
+  if (slider)  slider.style.borderColor= on ? 'var(--ac)'        : 'var(--bd)';
+  if (options) options.style.opacity   = on ? '1' : '0.38';
+  if (options) options.style.pointerEvents = on ? '' : 'none';
+}
+
+function onCompressToggle(checked) {
+  S.compressImages = checked;
+  _applyCompressToggleUI(checked);
+  scheduleAutoSave();
+}
+
+function onCompressMaxW(val) {
+  S.compressMaxW = parseInt(val);
+  document.getElementById('compress-maxw-val').textContent = val + 'px';
+  scheduleAutoSave();
+}
+
+function onCompressQuality(val) {
+  S.compressQuality = parseInt(val) / 100;
+  document.getElementById('compress-quality-val').textContent = val + '%';
+  scheduleAutoSave();
+}
+
 // 초기화
 initDrawPalette();
 
@@ -3220,9 +3384,4 @@ initDrawPalette();
   <div class="spt-desc">이미지가 길수록 숫자를 높이세요.<br>분할하지 않으면 잘려서 출력될 수 있습니다.</div>
   <table class="spt-table">
     <tr><td>1만px 이하</td><td>→</td><td>1분할</td></tr>
-    <tr><td>1만~2만px</td><td>→</td><td>2분할</td></tr>
-    <tr><td>2만~3만px</td><td>→</td><td>3분할</td></tr>
-    <tr><td>3만px 이상</td><td>→</td><td>4+</td></tr>
-  </table>
-  <div class="spt-note">※ 이미지 원본 세로 픽셀 기준</div>
-</div>
+    <tr><td>1만~2만px</td><t
